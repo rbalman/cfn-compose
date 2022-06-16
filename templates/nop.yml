@@ -1,0 +1,22 @@
+Parameters:
+  EnvironmentType:
+    Type: String
+  EnvironmentName:
+    Type: String
+Conditions:
+  Never:
+    !Equals [ "A", "C" ]
+
+Resources:
+  NonResource:
+    Type: Custom::NonResource
+    Properties:
+      One: "key"
+    Condition: Never
+
+  # TestSecurityGroup:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     GroupDescription: TestSecurityGroup
+  #     VpcId:
+  #       Fn::ImportValue: balman:VPC

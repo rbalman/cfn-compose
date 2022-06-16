@@ -1,0 +1,7 @@
+---
+description: "simple yml file"
+stacksets:
+  hello:
+    hi: "world"
+  bye:
+    bi: "world"
