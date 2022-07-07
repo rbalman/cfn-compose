@@ -14,9 +14,9 @@ Resources:
       One: "key"
     Condition: Never
 
-  # TestSecurityGroup:
-  #   Type: AWS::EC2::SecurityGroup
-  #   Properties:
-  #     GroupDescription: !Sub "TestSecurityGroup for ${EnvironmentType} of type ${EnvironmentType}"
-  #     VpcId:
-  #       Fn::ImportValue: balman:VPC
+  TestSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub "TestSecurityGroup for ${EnvironmentType} of type ${EnvironmentType}"
+      VpcId:
+        Fn::ImportValue: balman:VPC

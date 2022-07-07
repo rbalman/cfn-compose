@@ -12,6 +12,10 @@ import (
 	"strings"
 	"time"
 	"net/url"
+	"text/template"
+	"os/exec"
+	"bytes"
+	"log"
 )
 
 const Regions string = "eu-north-1, ap-south-1, eu-west-3, eu-west-2, eu-west-1, ap-northeast-3,  ap-northeast-2, ap-northeast-1, sa-east-1, ca-central-1, ap-southeast-1, ap-southeast-2, eu-central-1, us-east-1, us-east-2, us-west-1, us-west-2"
@@ -38,26 +42,85 @@ type Job struct {
 type Workflow struct {
 	Description string `yml:"description"`
 	Jobs map[string]Job `yml:"jobs"`
+	Vars map[string]string `yml:"vars"`
 }
 
+func (w *Workflow) Write(data []byte) (n int, err error) {
+	fmt.Println("Inside Writer %s", string(data))
+	err = yaml.Unmarshal(data, &w)
+	if err != nil {
+		return len(data), err
+	}
+	fmt.Println("Workflow: %+v", w)
+	return len(data), errors.New("hello")
+}
 
 //Parsing the configuration file
 func Parse(file string) (Workflow, error) {
 	var w Workflow
+	var wf Workflow
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return w, err
 	}
+	err = yaml.Unmarshal([]byte(data), &wf)
+	if err != nil {
+		return w, err
+	}
 
-	err = yaml.Unmarshal([]byte(data), &w)
+	// fmt.Printf("Data: %+v\n", wf)
+	t, err := template.New("WorkflowTemplate").Funcs(template.FuncMap{
+    "shell": func(bin string, args ...string) string {
+			if len(bin) < 1 {
+				log.Fatal(errors.New("Shell command requires at least one argument, which must be name of the binary."))
+				return ""
+			}
+      cmd := exec.Command(bin, args...)
+
+			var stdout, stderr bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+
+			err := cmd.Run()
+			if err != nil {
+				log.Fatal(errors.New(fmt.Sprintf("Shell command failed with: %s\n Error: %s", stderr.String(), err)))
+				return ""
+			}
+
+			log.Println("OUTPUT: ", stdout.String())
+			return strings.TrimSpace(stdout.String())
+		},
+	}).Parse(string(data))
+	if err != nil {
+		return w, err
+	}
+
+	tfile, err := os.Create("/tmp/workflow.yaml")
+	if err != nil {
+		return w, err
+	}
+	defer tfile.Close()
+	t.Execute(tfile, wf.Vars)
+
+	tdata, err := os.ReadFile("/tmp/workflow.yaml")
+	if err != nil {
+		return w, err
+	}
+
+	err = yaml.Unmarshal([]byte(tdata), &w)
+	if err != nil {
+		return w, err
+	}
+	// fmt.Printf("Data: %+v\n", w)
+
 	return w, err
 }
 
 ///TODO Make Create Input Methods DRY
 func (s *Stack)createStackInput() (cloudformation.CreateStackInput, error) {
 	var capabilities []*string
-	for _, capability := range s.Capabilities {
-    capabilities = append(capabilities, &capability)
+	for i, _ := range s.Capabilities {
+		capabilities = append(capabilities, &s.Capabilities[i])
 	}
 
 	var parameters []*cloudformation.Parameter
@@ -82,25 +145,31 @@ func (s *Stack)createStackInput() (cloudformation.CreateStackInput, error) {
 		tags = append(tags, &tag)
 	}
 
-	templateBody, err := ReadTemplate(s.TemplateFile)
-	if err != nil {
-		return cloudformation.CreateStackInput{}, err
-	}
-
-	return cloudformation.CreateStackInput{
+	input := cloudformation.CreateStackInput{
 		Capabilities: capabilities,
 		Parameters:   parameters,
 		StackName:    &s.StackName,
-		TemplateBody: &templateBody,
 		Tags: tags,
-	}, nil
+	}
+
+	if s.TemplateURL != "" {
+		input.TemplateURL = &s.TemplateURL
+	}else{
+		templateBody, err := ReadTemplate(s.TemplateFile)
+		if err != nil {
+			return cloudformation.CreateStackInput{}, err
+		}
+		input.TemplateBody = &templateBody
+	}
+	
+	return input, nil
 }
 
 ///TODO Make Update Input Methods DRY
 func (s *Stack)updateStackInput() (cloudformation.UpdateStackInput, error) {
 	var capabilities []*string
-	for _, capability := range s.Capabilities {
-    capabilities = append(capabilities, &capability)
+	for i, _ := range s.Capabilities {
+		capabilities = append(capabilities, &s.Capabilities[i])
 	}
 
 	var parameters []*cloudformation.Parameter
@@ -125,26 +194,32 @@ func (s *Stack)updateStackInput() (cloudformation.UpdateStackInput, error) {
 		tags = append(tags, &tag)
 	}
 
-	templateBody, err := ReadTemplate(s.TemplateFile)
-	if err != nil {
-		return cloudformation.UpdateStackInput{}, err
-	}
-
-	return cloudformation.UpdateStackInput{
+	input := cloudformation.UpdateStackInput{
 		Capabilities: capabilities,
 		Parameters:   parameters,
 		StackName:    &s.StackName,
-		TemplateBody: &templateBody,
 		Tags: tags,
-	}, nil
+	}
+
+	if s.TemplateURL != "" {
+		input.TemplateURL = &s.TemplateURL
+	}else{
+		templateBody, err := ReadTemplate(s.TemplateFile)
+		if err != nil {
+			return cloudformation.UpdateStackInput{}, err
+		}
+		input.TemplateBody = &templateBody
+	}
+
+	return input, nil
 }
 
 
 ///TODO Make Create Changeset Input Method DRY
 func (s *Stack)createChangeSetInput() (cloudformation.CreateChangeSetInput, error) {
 	var capabilities []*string
-	for _, capability := range s.Capabilities {
-    capabilities = append(capabilities, &capability)
+	for i, _ := range s.Capabilities {
+		capabilities = append(capabilities, &s.Capabilities[i])
 	}
 
 	var parameters []*cloudformation.Parameter

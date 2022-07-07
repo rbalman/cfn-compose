@@ -1,41 +1,25 @@
 ---
-### TODO
-# - support checking change-set and manual approval(Done but might need)
-# - support parameters and environment variables
-# - support parallelization for for each jobs
-# - ignore specific stacks
-# - handling failures
-# - retires, timeout
-# - convert to cli
-# - test it out with one subsystem
-# - support parallelization for intra stacks
 description: Creates stacks for my imaginary service
-# env:
-#   ENV_LABEL: balman
-#   ENV_TYPE: balman
-#   SUB_SYSTEM: iam
-#   SERVICE_NAME: imaginary-service
-#   AWS_PROFILE: sputnik-pre-staging
+vars:
+  ENV_LABEL: bijay
+  ENV_TYPE: nonproduction
+  SUB_SYSTEM: iam
+  SERVICE_NAME: imaginary-service
+  AWS_PROFILE: sputnik-pre-staging
 jobs:
   Infra:
     description: "imaginary service job"
     stacks:
       SNSStack:
-        depends_on: SQSStack
-        # template_file or template_file needs to be provided. template_file takes the precedence.
-        template_file: "templates/nop.yml" #string filename. takes both absolute and relative path(Path from where the command is executed). 
-        stack_name: balman-sns-stack #string
-        capabilities: # list of strings(capabilities)
-          - CAPABILITY_IAM
-          - CAPABILITY_NAMED_IAM
-        # parameters_file: parameters_file or parameters needs to be provided, parameters takes the precedence
-        parameters: #map of string, string
-          EnvironmentType: uat
-          EnvironmentName: uat
-        tags: #map of string, string
-          EnvironmentType: nonproduction
-          EnvironmentName: balman
-        # check_change_set: true
+        needs: SQSStack
+        template_file: "templates/nop.yml"
+        stack_name: balman-sns-stack
+        parameters: 
+          EnvironmentType: {{ .ENV_TYPE }}
+          EnvironmentName: {{ .ENV_LABEL }}
+        tags:
+          EnvironmentType: {{ .ENV_TYPE }}
+          EnvironmentName: {{ .ENV_LABEL }}
         # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
         # timeout: 10
 
@@ -46,14 +30,14 @@ jobs:
           - CAPABILITY_IAM
           - CAPABILITY_NAMED_IAM
         parameters:
-          EnvironmentType: uat
-          EnvironmentName: uat
+          EnvironmentType: {{ .ENV_TYPE }}
+          EnvironmentName: {{ .ENV_LABEL }}
         tags:
-          EnvironmentType: nonproduction
-          EnvironmentName: balman
+          EnvironmentType: {{ .ENV_TYPE }}
+          EnvironmentName: {{ .ENV_LABEL }}
 
   services:
-    depends_on: "Infra"
+    needs: "Infra"
     description: "imaginary service job"
     stacks:
       idmservice:
@@ -63,38 +47,37 @@ jobs:
           - CAPABILITY_IAM
           - CAPABILITY_NAMED_IAM
         parameters:
-          EnvironmentType: uat
-          EnvironmentName: uat
+          EnvironmentType: {{ .ENV_TYPE }}
+          EnvironmentName: {{ .ENV_LABEL }}
         tags:
-          EnvironmentType: nonproduction
-          EnvironmentName: balman
+          EnvironmentType: {{ .ENV_TYPE }}
+          EnvironmentName: {{ .ENV_LABEL }}
 
       idmlambda:
         enable_change_set: true
-        depends_on: idmservice
+        needs: idmservice
         template_file: "templates/sg.yml"
         stack_name: balman-service
         capabilities:
           - CAPABILITY_IAM
           - CAPABILITY_NAMED_IAM
         parameters:
-          EnvironmentType: uat
-          EnvironmentName: uat
+          EnvironmentType: {{ .ENV_TYPE }}
+          EnvironmentName: {{ .ENV_LABEL }}
         tags:
-          EnvironmentType: tenvtypes
-          EnvironmentName: tenvnames
+          EnvironmentType: {{ .ENV_TYPE }}
+          EnvironmentName: {{ .ENV_LABEL }}
 
       changeset:
-        enable_change_set: true
-        depends_on: idmservice
+        needs: idmservice
         template_file: "templates/sg.yml"
         stack_name: balman-change-set
         capabilities:
           - CAPABILITY_IAM
           - CAPABILITY_NAMED_IAM
         parameters:
-          EnvironmentType: uat
-          EnvironmentName: uat
+          EnvironmentType: {{ .ENV_TYPE }}
+          EnvironmentName: {{ .ENV_LABEL }}
         tags:
-          EnvironmentType: tenvtypes
-          EnvironmentName: tenvnames
+          EnvironmentType: {{ .ENV_TYPE }}
+          EnvironmentName: {{ .ENV_LABEL }}
