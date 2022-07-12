@@ -1,8 +1,6 @@
-package yml
+package workflow
 
 import (
-	"os"
-	"gopkg.in/yaml.v2"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -12,16 +10,11 @@ import (
 	"strings"
 	"time"
 	"net/url"
-	"text/template"
-	"os/exec"
-	"bytes"
-	"log"
 )
 
 const Regions string = "eu-north-1, ap-south-1, eu-west-3, eu-west-2, eu-west-1, ap-northeast-3,  ap-northeast-2, ap-northeast-1, sa-east-1, ca-central-1, ap-southeast-1, ap-southeast-2, eu-central-1, us-east-1, us-east-2, us-west-1, us-west-2"
 
 type Stack struct {
-	DependsOn string `yaml:"depends_on"`
 	TemplateFile string `yaml:"template_file"`
 	TemplateURL string `yaml:"template_url"`
 	StackName string `yaml:"stack_name"`
@@ -33,87 +26,27 @@ type Stack struct {
 	EnableChangeSet bool `yaml:"enable_change_set"`
 }
 
-type Job struct {
-	Description string `yml:"description"`
-	Stacks map[string]Stack `yaml:"stacks`
-	DependsOn string `yaml:"depends_on"`
-}
+var stackCountLimit int = 30
 
-type Workflow struct {
-	Description string `yml:"description"`
-	Jobs map[string]Job `yml:"jobs"`
-	Vars map[string]string `yml:"vars"`
-}
-
-func (w *Workflow) Write(data []byte) (n int, err error) {
-	fmt.Println("Inside Writer %s", string(data))
-	err = yaml.Unmarshal(data, &w)
-	if err != nil {
-		return len(data), err
-	}
-	fmt.Println("Workflow: %+v", w)
-	return len(data), errors.New("hello")
-}
-
-//Parsing the configuration file
-func Parse(file string) (Workflow, error) {
-	var w Workflow
-	var wf Workflow
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return w, err
-	}
-	err = yaml.Unmarshal([]byte(data), &wf)
-	if err != nil {
-		return w, err
+/*
+Stack is valid only when it satisfies all the below mentioned conditions:
+- stack_name can't be empty
+- one of template_url or template_file is mandatory, if both provided results into error
+*/
+func (s *Stack) Validate(name string) error {
+	if s.StackName == "" {
+		return fmt.Errorf("stack_name field for %s stack is empty", name)
 	}
 
-	// fmt.Printf("Data: %+v\n", wf)
-	t, err := template.New("WorkflowTemplate").Funcs(template.FuncMap{
-    "shell": func(bin string, args ...string) string {
-			if len(bin) < 1 {
-				log.Fatal(errors.New("Shell command requires at least one argument, which must be name of the binary."))
-				return ""
-			}
-      cmd := exec.Command(bin, args...)
-
-			var stdout, stderr bytes.Buffer
-			cmd.Stdout = &stdout
-			cmd.Stderr = &stderr
-
-			err := cmd.Run()
-			if err != nil {
-				log.Fatal(errors.New(fmt.Sprintf("Shell command failed with: %s\n Error: %s", stderr.String(), err)))
-				return ""
-			}
-
-			log.Println("OUTPUT: ", stdout.String())
-			return strings.TrimSpace(stdout.String())
-		},
-	}).Parse(string(data))
-	if err != nil {
-		return w, err
+	if (s.TemplateFile == "" && s.TemplateURL == "") {
+		return fmt.Errorf("one of the 'template_body' or 'template_url' should be provided for %s stack", name)
 	}
 
-	tfile, err := os.Create("/tmp/workflow.yaml")
-	if err != nil {
-		return w, err
-	}
-	defer tfile.Close()
-	t.Execute(tfile, wf.Vars)
-
-	tdata, err := os.ReadFile("/tmp/workflow.yaml")
-	if err != nil {
-		return w, err
+	if (s.TemplateFile != "" && s.TemplateURL != "") {
+		return fmt.Errorf("can't provide value for both 'template_body' and 'template_url' for %s stack", name)
 	}
 
-	err = yaml.Unmarshal([]byte(tdata), &w)
-	if err != nil {
-		return w, err
-	}
-	// fmt.Printf("Data: %+v\n", w)
-
-	return w, err
+	return nil
 }
 
 ///TODO Make Create Input Methods DRY
@@ -275,7 +208,7 @@ func (s *Stack) status(cm cfn.CFNManager) (string, error) {
 					return "DOESN'T EXIST", nil
 				default:
 					fmt.Println("ERROR CODE: ", aerr.Code())
-					return "", errors.New(fmt.Sprintf("Failed while checking stack status, ERROR: %s", err.Error))
+					return "", errors.New(fmt.Sprintf("Failed while checking stack status, ERROR: %+v", err.Error()))
 			}
 		}
 	}

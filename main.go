@@ -3,24 +3,32 @@ package main
 import (
 	"fmt"
 	"cfn-deploy/cfn"
-	"cfn-deploy/yml"
+	"cfn-deploy/workflow"
 	"os"
 )
 
 func main() {
-	workflow, err := yml.Parse(os.Getenv("WORKFLOW"))
+	wf, err := workflow.Parse(os.Getenv("WORKFLOW"))
 	if err != nil {
-		fmt.Printf("Error while fetching workflow: %s\n", err.Error())
+		fmt.Printf("[ERROR] Error while fetching workflow: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	err = wf.Validate()
+	if err  != nil {
+		fmt.Printf("[ERROR] Failed while validating workflow: %s\n", err.Error())
+		os.Exit(1)
 	}
 
 	sess, err := getAWSSession(os.Getenv("AWS_PROFILE"), os.Getenv("AWS_REGION"))
 	if err != nil {
-		fmt.Printf("Error while getting Session: %s\n", err.Error())
+		fmt.Printf("[ERROR] Error while getting Session: %s\n", err.Error())
+		os.Exit(1)
 	}
 	
 	cm := cfn.CFNManager{ Session: sess}
 
-	for jobName, job := range workflow.Jobs {
+	for jobName, job := range wf.Jobs {
 		for _, stack := range job.Stacks {
 			fmt.Println("--------------------------------------------------")
 			fmt.Printf("   Job: %s => Stack: %s\n", jobName, stack.StackName)

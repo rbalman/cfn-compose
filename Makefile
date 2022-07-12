@@ -3,3 +3,6 @@ bin: build
 
 build:
 	go build -o cfn-deploy .
+
+test:
+	go test ./...
