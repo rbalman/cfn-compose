@@ -39,11 +39,11 @@ func (s *Stack) Validate(name string) error {
 	}
 
 	if (s.TemplateFile == "" && s.TemplateURL == "") {
-		return fmt.Errorf("one of the 'template_body' or 'template_url' should be provided for %s stack", name)
+		return fmt.Errorf("one of the 'template_file' or 'template_url' should be provided for %s stack", name)
 	}
 
 	if (s.TemplateFile != "" && s.TemplateURL != "") {
-		return fmt.Errorf("can't provide value for both 'template_body' and 'template_url' for %s stack", name)
+		return fmt.Errorf("can't provide value for both 'template_file' and 'template_url' for %s stack", name)
 	}
 
 	return nil
