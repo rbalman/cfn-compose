@@ -17,6 +17,7 @@ type Work struct {
 	JobName string
 	Job workflow.Job
 	LogColor string
+	DryRun bool
 }
 
 type Result struct {
@@ -57,7 +58,7 @@ func main() {
 		var jobsCountInOrder int = 0
 		for name, job := range wf.Jobs {
 			if job.Order == order {
-				work_ch <- Work{JobName: name, Job: job, LogColor: colors[queuedJob]}
+				work_ch <- Work{JobName: name, Job: job, LogColor: colors[queuedJob], DryRun: true}
 				queuedJob++
 				jobsCountInOrder++
 			}
@@ -109,12 +110,19 @@ func ExecuteJob(ctx context.Context, work_ch chan Work, results_ch chan Result, 
 				time.Sleep(time.Millisecond * 500)
 				name := work.JobName
 				job := work.Job
+				dryRun := work.DryRun
 				jobCtx := context.WithValue(ctx, "logColor", work.LogColor)
 				logger.ColorPrintf(jobCtx, "[INFO] Starting to execute stacks for Job: '%s'\n", name)
 
 				for _, stack := range job.Stacks {
-					logger.ColorPrintf(jobCtx,"[INFO] Applying Change for Job: '%s', Stack: '%s'\n", name, stack.StackName)
-					err := stack.ApplyChanges(jobCtx, cm)
+					var err error
+					if dryRun {
+						logger.ColorPrintf(jobCtx,"[INFO] Executing DryRun on Job: '%s', Stack: '%s'\n", name, stack.StackName)
+						err = stack.DryRun(jobCtx, cm)
+					}else{
+						logger.ColorPrintf(jobCtx,"[INFO] Applying Change for Job: '%s', Stack: '%s'\n", name, stack.StackName)
+						err = stack.ApplyChanges(jobCtx, cm)
+					}
 					if err != nil {
 						// logger.ColorPrintf(jobCtx, "[DEBUG] Job: %s Sending Fail Signal\n", name)
 						errStr := fmt.Sprintf("[ERROR] Failed Job: '%s', Stack '%s', Error: %s\n", name, stack.StackName, err)

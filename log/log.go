@@ -19,7 +19,7 @@ func (l *Logger) ColorPrint(ctx context.Context, lg string) {
 	if color, ok := ctx.Value("logColor").(string); ok {
 		lg = fmt.Sprintf("%s%s%s", color, lg, Reset)
 	}
-	fmt.Printf("%s\n", lg)
+	fmt.Printf("%s", lg)
 }
 
 func (l *Logger) ColorPrintf(ctx context.Context, lg string, params ...interface{}) {

@@ -246,7 +246,7 @@ func (s *Stack) ApplyChanges(ctx context.Context, cm cfn.CFNManager) error {
 					return err
 				}
 
-				cs, err := cm.CreateChangeSetWithWait(&i)
+				cs, err := cm.CreateChangeSetWithWait(ctx, &i)
 				if err != nil {
 					if strings.Contains(err.Error(), "ResourceNotReady:") {
 						logger.ColorPrintf(ctx,"[INFO] Skipping.. No changes found while creating change-set for stack: %s", s.StackName)
@@ -281,7 +281,7 @@ func (s *Stack) ApplyChanges(ctx context.Context, cm cfn.CFNManager) error {
 				return err
 			}
 
-			_, err = cm.UpdateStackWithWait(&i)
+			_, err = cm.UpdateStackWithWait(ctx, &i)
 			if err != nil {
 				if aerr, ok := err.(awserr.Error); ok {
 					switch aerr.Code() {
@@ -295,6 +295,44 @@ func (s *Stack) ApplyChanges(ctx context.Context, cm cfn.CFNManager) error {
 
 		default:
 			return errors.New(fmt.Sprintf("Stopping... the launch as the stack:%s status is in %s state\n", s.StackName, status))
+	}
+
+	return nil
+}
+
+
+func (s *Stack) DryRun(ctx context.Context, cm cfn.CFNManager) error {
+	status, err := s.status(ctx, cm)
+	if err != nil {
+		return err
+	}
+
+	switch status {
+		case "DELETE_COMPLETE", "DOESN'T EXIST":
+			logger.ColorPrintf(ctx,"[INFO] Stack:'%s', Status: '%s' will be created.\n", s.StackName, status)
+
+		case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "CREATE_COMPLETE":
+			// logger.ColorPrintf(ctx,"[DEBUG] Creating Changeset... for the stack: %s is at %s state\n", status, s.StackName)
+			i, err := s.createChangeSetInput()
+			if err != nil {
+				return err
+			}
+
+			cs, err := cm.CreateChangeSetWithWait(ctx, &i)
+			if err != nil {
+				if strings.Contains(err.Error(), "ResourceNotReady:") {
+					logger.ColorPrintf(ctx,"[INFO] Stack: '%s', Status: %s no change detected.\n", s.StackName, status)
+					return nil
+				}
+				return err
+			}
+
+			link := fmt.Sprintf("https://us-east-1.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/changesets/changes?stackId=%s&changeSetId=%s", "us-east-1", url.QueryEscape(*cs.StackId), url.QueryEscape(*cs.Id))
+
+			logger.ColorPrintf(ctx,"[INFO] Stack: '%s', Status: %s will be updated.\nChangeSet Link: %s\n", s.StackName, status, link)
+
+		default:
+			logger.ColorPrintf(ctx, "[INFO] Can't run the stack operations as Stack: '%s' is in %s state\n", s.StackName, status)
 	}
 
 	return nil

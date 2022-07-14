@@ -73,7 +73,7 @@ func (cm CFNManager) CreateStackWithWait(ctx context.Context, input *cloudformat
 	}
 
 	ch := make(chan bool)
-	go loader(ch)
+	go loader(ctx, ch)
 	err = cm.WaitStackCreateComplete(*input.StackName)
 	ch <- true
 	if err != nil {
@@ -85,14 +85,14 @@ func (cm CFNManager) CreateStackWithWait(ctx context.Context, input *cloudformat
 }
 
 
-func (cm CFNManager) UpdateStackWithWait(input *cloudformation.UpdateStackInput) (*cloudformation.UpdateStackOutput, error) {
+func (cm CFNManager) UpdateStackWithWait(ctx context.Context, input *cloudformation.UpdateStackInput) (*cloudformation.UpdateStackOutput, error) {
 	res, err := cm.UpdateStack(input)
 	if err != nil {
 		return nil, err
 	}
 
 	ch := make(chan bool)
-	go loader(ch)
+	go loader(ctx, ch)
 	err = cm.WaitStackUpdateComplete(*input.StackName)
 	ch <- true
 	if err != nil {
@@ -102,14 +102,14 @@ func (cm CFNManager) UpdateStackWithWait(input *cloudformation.UpdateStackInput)
 	return res, nil
 }
 
-func (cm CFNManager) DeleteStackWithWait(stackName string) (*cloudformation.DeleteStackOutput, error) {
+func (cm CFNManager) DeleteStackWithWait(ctx context.Context, stackName string) (*cloudformation.DeleteStackOutput, error) {
 	res, err := cm.DeleteStack(stackName)
 	if err != nil {
 		return nil, err
 	}
 
 	ch := make(chan bool)
-	go loader(ch)
+	go loader(ctx, ch)
 	err = cm.WaitStackDeleteComplete(stackName)
 	ch <- true
 	if err != nil {
@@ -119,14 +119,14 @@ func (cm CFNManager) DeleteStackWithWait(stackName string) (*cloudformation.Dele
 	return res, nil
 }
 
-func (cm CFNManager) CreateChangeSetWithWait(input *cloudformation.CreateChangeSetInput) (*cloudformation.CreateChangeSetOutput, error) {
+func (cm CFNManager) CreateChangeSetWithWait(ctx context.Context, input *cloudformation.CreateChangeSetInput) (*cloudformation.CreateChangeSetOutput, error) {
 	res, err := cm.CreateChangeSet(input)
 	if err != nil {
 		return nil, err
 	}
 
 	ch := make(chan bool)
-	go loader(ch)
+	go loader(ctx, ch)
 	err = cm.WaitChangeSetCreateComplete(*input.StackName, *input.ChangeSetName)
 	ch <- true
 	if err != nil {
@@ -144,7 +144,7 @@ func (cm CFNManager) ExecuteChangeSetWithWait(ctx context.Context, input *cloudf
 
 	time.Sleep(5 * time.Second)
 	ch := make(chan bool)
-	go loader(ch)
+	go loader(ctx, ch)
 	err = cm.WaitStackUpdateComplete(*input.StackName)
 	ch <- true
 	if err != nil {
