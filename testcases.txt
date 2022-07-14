@@ -1,0 +1,18 @@
+Decisions:
+  - Jobs without order being defined are considered to be zero ordered
+  - Jobs should honor the order they are in, only jobs that are in same order can be executed concurrently at a given time
+  - When One job fails, all other running jobs should be cancelled within the grace period
+
+Cases To be Tested:
+  - when only single job
+  - when two or more than two jobs
+  - when one of stack fails
+  - change the order of the job to 0, 1, 2
+  - when multiple failures are seen in different jobs 
+  - log readability
+
+Features
+  - dry-run
+  - cli wrapper
+  - environment variable support
+  - multi file logging

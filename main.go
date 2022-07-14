@@ -4,51 +4,78 @@ import (
 	"fmt"
 	"cfn-deploy/cfn"
 	"cfn-deploy/workflow"
+	"cfn-deploy/log"
 	"os"
 	"errors"
+	"time"
+	"context"
 )
 
+var colors []string = []string{log.Blue, log.Yellow, log.Green, log.Magenta}
+var logger = log.Logger{}
+type Work struct {
+	JobName string
+	Job workflow.Job
+	LogColor string
+}
+
+type Result struct {
+	JobName string
+	Error error
+}
+
 func main() {
+	ctx := context.Background()
+	ctx, cancelCtx := context.WithCancel(ctx)
+	defer cancelCtx()
+
 	wf, err := workflow.Parse(os.Getenv("WORKFLOW"))
 	if err != nil {
-		fmt.Printf("[ERROR] Error while fetching workflow: %s\n", err.Error())
+		logger.ColorPrintf(ctx, "[ERROR] Error while fetching workflow: %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	err = wf.Validate()
 	if err  != nil {
-		fmt.Printf("[ERROR] Failed while validating workflow: %s\n", err.Error())
+		logger.ColorPrintf(ctx,"[ERROR] Failed while validating workflow: %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	work_ch := make(chan map[string]workflow.Job)
-	results_ch := make(chan error, 1)
+	work_ch := make(chan Work)
+	results_ch := make(chan Result)
 
 	//Generate the worker pool as pre the job counts
 	jobCounts := len(wf.Jobs)
-	for i := 0; i < jobCounts ; i++ {
-		go ExecuteJob(work_ch, results_ch, i)
+	for i := 0; i < jobCounts; i++ {
+		go ExecuteJob(ctx, work_ch, results_ch, i)
 	}
 
 	queuedJob := 0
 	var order uint = 0
-	jobsCountInOrder := 0
 	//Publish work to the worker pool
 	for {
+		var jobsCountInOrder int = 0
 		for name, job := range wf.Jobs {
 			if job.Order == order {
-				work_ch <- map[string]workflow.Job{ name: job }
+				work_ch <- Work{JobName: name, Job: job, LogColor: colors[queuedJob]}
 				queuedJob++
 				jobsCountInOrder++
 			}
 		}
+		fmt.Printf("[INFO] Dispatched Order: %d, JobCount: %d.\n", order, jobsCountInOrder)
 
 		//wait for jobs for each order to complete
 		for i := 0; i < jobsCountInOrder ; i++ {
-			fmt.Printf("[INFO] Waiting for result Order: %d, JobCount: %d\n", order, i)
-			err := <- results_ch
-			if err != nil {
-				fmt.Sprintf("[ERROR] %s", err)
+			// logger.ColorPrintf(ctx,"[INFO] Order: %d, JobCount: %d. Waiting for result\n", order, jobsCountInOrder)
+			r := <- results_ch
+			// fmt.Printf("[DEBUG] Received Signal for Job: %s\n", r.JobName)
+			if r.Error != nil {
+				cancelCtx()
+				fmt.Println("[INFO] Graceful wait for cancelled jobs")
+				time.Sleep(time.Second * 10)
+				// fmt.Printf("[DEBUG] Shutting down the process: %s\n", r.JobName)
+				logger.Errorf("Workflow failed. Reason: %s", r.Error)
+				return
 			}
 		}
 			
@@ -58,11 +85,15 @@ func main() {
 		order++
 	}
 
-	fmt.Println("[INFO] Workflow Successfully executed!!")
+	cancelCtx()
+	time.Sleep(time.Second*2)
+	logger.ColorPrintf(ctx,"[INFO] Workflow Successfully executed!!")
 }
 
-
-func ExecuteJob(work_ch chan map[string]workflow.Job, results_ch chan error, workerId int){
+func ExecuteJob(ctx context.Context, work_ch chan Work, results_ch chan Result, workerId int){
+	defer func(){
+		fmt.Printf("[DEBUG] Worker: %d exitting...\n", workerId)
+	}()
 	sess, err := getAWSSession(os.Getenv("AWS_PROFILE"), os.Getenv("AWS_REGION"))
 	if err != nil {
 		fmt.Printf("[ERROR] Error while getting Session: %s\n", err.Error())
@@ -71,18 +102,39 @@ func ExecuteJob(work_ch chan map[string]workflow.Job, results_ch chan error, wor
 	
 	cm := cfn.CFNManager{ Session: sess}
 
-	for jobMap := range work_ch {
-		for name, job := range jobMap{
-			for _, stack := range job.Stacks {
-				fmt.Printf("[INFO] Applying Change for Order: %d, Job: %s, Stack: %s\n", job.Order, name, stack.StackName)
-				err := stack.ApplyChanges(cm)
-				fmt.Errorf("Failed while applying change for Job: %s, Stack %s, Error: %s\n", name, stack.StackName, err)
-				results_ch <- errors.New(fmt.Sprintf("Failed while applying change for Job: %s, Stack %s, Error: %s\n", name, stack.StackName, err))
-				fmt.Println()
-			}
-			fmt.Printf("[INFO] Job: Order: %d, %s Completed Successfully!!\n", job.Order, name)
+	for {
+		select {
+			case work := <- work_ch:
+				//sleeping from readability
+				time.Sleep(time.Millisecond * 500)
+				name := work.JobName
+				job := work.Job
+				jobCtx := context.WithValue(ctx, "logColor", work.LogColor)
+				logger.ColorPrintf(jobCtx, "[INFO] Starting to execute stacks for Job: '%s'\n", name)
+
+				for _, stack := range job.Stacks {
+					logger.ColorPrintf(jobCtx,"[INFO] Applying Change for Job: '%s', Stack: '%s'\n", name, stack.StackName)
+					err := stack.ApplyChanges(jobCtx, cm)
+					if err != nil {
+						// logger.ColorPrintf(jobCtx, "[DEBUG] Job: %s Sending Fail Signal\n", name)
+						errStr := fmt.Sprintf("[ERROR] Failed Job: '%s', Stack '%s', Error: %s\n", name, stack.StackName, err)
+						logger.ColorPrintf(jobCtx, errStr)
+						results_ch <- Result{
+								Error: errors.New(errStr),
+								JobName: name,
+							}
+						break;
+					}
+				}
+				// logger.ColorPrintf(jobCtx, "[DEBUG] Sending Success Signal Job: %s\n", name)
+				logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' Completed Successfully!!\n", name)
+				results_ch <- Result{JobName: name}
+
+			case <- ctx.Done():
+				if err := ctx.Err(); err != nil {
+					fmt.Printf("[DEBUG] Cancel signal received Worker: %d, Info: %s\n", workerId, err)
+				}
+				return
 		}
 	}
-
-	fmt.Printf("[INFO] Worker %d Retiring..\n", workerId)
 }

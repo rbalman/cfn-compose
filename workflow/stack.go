@@ -10,8 +10,11 @@ import (
 	"strings"
 	"time"
 	"net/url"
+	"cfn-deploy/log"
+	"context"
 )
 
+var logger = log.Logger{}
 const Regions string = "eu-north-1, ap-south-1, eu-west-3, eu-west-2, eu-west-1, ap-northeast-3,  ap-northeast-2, ap-northeast-1, sa-east-1, ca-central-1, ap-southeast-1, ap-southeast-2, eu-central-1, us-east-1, us-east-2, us-west-1, us-west-2"
 
 type Stack struct {
@@ -199,7 +202,7 @@ func (s *Stack)createChangeSetInput() (cloudformation.CreateChangeSetInput, erro
 }
 
 
-func (s *Stack) status(cm cfn.CFNManager) (string, error) {
+func (s *Stack) status(ctx context.Context, cm cfn.CFNManager) (string, error) {
 	res, err := cm.DescribeStacks(s.StackName)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
@@ -207,7 +210,7 @@ func (s *Stack) status(cm cfn.CFNManager) (string, error) {
 				case "ValidationError":
 					return "DOESN'T EXIST", nil
 				default:
-					fmt.Println("ERROR CODE: ", aerr.Code())
+					logger.ColorPrintf(ctx,"ERROR CODE: ", aerr.Code())
 					return "", errors.New(fmt.Sprintf("Failed while checking stack status, ERROR: %+v", err.Error()))
 			}
 		}
@@ -217,27 +220,27 @@ func (s *Stack) status(cm cfn.CFNManager) (string, error) {
 	return *cfnStack.StackStatus, nil
 }
 
-func (s *Stack) ApplyChanges(cm cfn.CFNManager) error {
-	status, err := s.status(cm)
+func (s *Stack) ApplyChanges(ctx context.Context, cm cfn.CFNManager) error {
+	status, err := s.status(ctx, cm)
 	if err != nil {
 		return err
 	}
 
 	switch status {
 		case "DELETE_COMPLETE", "DOESN'T EXIST":
-			fmt.Printf("[INFO] Creating Stack... as the stack is in %s state\n", status)
+			logger.ColorPrintf(ctx,"[INFO] Creating Stack... as the stack:%s is in %s state\n", s.StackName, status)
 			i, err := s.createStackInput()
 			if err != nil {
 				return err
 			}
 
-			_, err = cm.CreateStackWithWait(&i)
+			_, err = cm.CreateStackWithWait(ctx, &i)
 			if err != nil {
 				return err
 			}
 		case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "CREATE_COMPLETE":
 			if s.EnableChangeSet {
-				fmt.Printf("[INFO] Creating Changeset... as the enable_change_set flag is true, and the stack is at %s state\n", status)
+				logger.ColorPrintf(ctx,"[INFO] Creating Changeset... as the enable_change_set flag is true, and the stack: %s is at %s state\n", status, s.StackName)
 				i, err := s.createChangeSetInput()
 				if err != nil {
 					return err
@@ -246,33 +249,33 @@ func (s *Stack) ApplyChanges(cm cfn.CFNManager) error {
 				cs, err := cm.CreateChangeSetWithWait(&i)
 				if err != nil {
 					if strings.Contains(err.Error(), "ResourceNotReady:") {
-						fmt.Println("[INFO] Skipping.. No changes found while creating change-set")
+						logger.ColorPrintf(ctx,"[INFO] Skipping.. No changes found while creating change-set for stack: %s", s.StackName)
 						return nil
 					}
 					return err
 				}
 
 				link := fmt.Sprintf("https://us-east-1.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/changesets/changes?stackId=%s&changeSetId=%s", "us-east-1", url.QueryEscape(*cs.StackId), url.QueryEscape(*cs.Id))
-				fmt.Printf("\n[INFO] Review Required\n Link: %s \n", link)
-				fmt.Println()
-				fmt.Printf("[INPUT] Execute ChangeSet(y|Y) or Discard ChangeSet(n|N)?:")
+				logger.ColorPrintf(ctx,"\n[INFO] Review Required\n Link: %s \n", link)
+				logger.ColorPrintf(ctx,"")
+				logger.ColorPrintf(ctx,"[INPUT] Execute ChangeSet(y|Y) or Discard ChangeSet(n|N)?:")
 				var execute string
 				fmt.Scanln(&execute)
 
 				if execute == "y" || execute == "Y" {
-					fmt.Printf("[INFO] Executing the ChangeSet as input was: %s\n", execute)
-					_, err = cm.ExecuteChangeSetWithWait(&cloudformation.ExecuteChangeSetInput{
+					logger.ColorPrintf(ctx,"[INFO] Executing the ChangeSet as input was: %s\n", execute)
+					_, err = cm.ExecuteChangeSetWithWait(ctx, &cloudformation.ExecuteChangeSetInput{
 						ChangeSetName: cs.Id,
 						StackName: cs.StackId,
 					})
 				}else {
-					fmt.Printf("[INFO] Skipping the ChangeSet as input was: %s\n", execute)
+					logger.ColorPrintf(ctx,"[INFO] Skipping the ChangeSet as input was: %s\n", execute)
 				}
 				return nil
 			}
 
 
-			fmt.Printf("[INFO] Updating Stack... as the stack is in %s state\n", status)
+			logger.ColorPrintf(ctx,"[INFO] Updating Stack... as the stack: %s is in %s state\n", s.StackName, status)
 			i, err := s.updateStackInput()
 			if err != nil {
 				return err
@@ -283,7 +286,7 @@ func (s *Stack) ApplyChanges(cm cfn.CFNManager) error {
 				if aerr, ok := err.(awserr.Error); ok {
 					switch aerr.Code() {
 						case "ValidationError":
-							fmt.Printf("[WARN] Skipping... Update. Warning: %s\n", err.Error())
+							logger.ColorPrintf(ctx,"[WARN] Skipping... Update for stack: %s. Warning: %s\n", s.StackName, err.Error())
 						default:
 							return err
 					}
@@ -291,7 +294,7 @@ func (s *Stack) ApplyChanges(cm cfn.CFNManager) error {
 			}
 
 		default:
-			return errors.New(fmt.Sprintf("Stopping... the launch as the stack status is in %s state\n", status))
+			return errors.New(fmt.Sprintf("Stopping... the launch as the stack:%s status is in %s state\n", s.StackName, status))
 	}
 
 	return nil
