@@ -329,7 +329,7 @@ func (s *Stack) DryRun(ctx context.Context, cm cfn.CFNManager) error {
 
 			link := fmt.Sprintf("https://us-east-1.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/changesets/changes?stackId=%s&changeSetId=%s", "us-east-1", url.QueryEscape(*cs.StackId), url.QueryEscape(*cs.Id))
 
-			logger.ColorPrintf(ctx,"[INFO] Stack: '%s', Status: %s will be updated.\nChangeSet Link: %s\n", s.StackName, status, link)
+			logger.ColorPrintf(ctx,"[INFO] Stack: '%s', Status: %s will be updated.\n\tChangeSet Link: %s\n", s.StackName, status, link)
 
 		default:
 			logger.ColorPrintf(ctx, "[INFO] Can't run the stack operations as Stack: '%s' is in %s state\n", s.StackName, status)

@@ -79,6 +79,11 @@ func Parse(file string) (Workflow, error) {
 		return w, err
 	}
 
+	err = overrideWithEnvs(wf.Vars)
+	if err != nil {
+		return w, err
+	}
+
 	t, err := template.New("WorkflowTemplate").Funcs(template.FuncMap{
     "shell": func(bin string, args ...string) string {
 			if len(bin) < 1 {
@@ -123,4 +128,15 @@ func Parse(file string) (Workflow, error) {
 	}
 
 	return w, err
+}
+
+
+func overrideWithEnvs(varsMap map[string]string) error {
+	var err error
+	for _, v := range os.Environ() {
+    split_v := strings.Split(v, "=")
+    varsMap[split_v[0]] = split_v[1]
+  }
+
+  return err
 }

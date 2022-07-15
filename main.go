@@ -112,12 +112,16 @@ func ExecuteJob(ctx context.Context, work_ch chan Work, results_ch chan Result, 
 				job := work.Job
 				dryRun := work.DryRun
 				jobCtx := context.WithValue(ctx, "logColor", work.LogColor)
-				logger.ColorPrintf(jobCtx, "[INFO] Starting to execute stacks for Job: '%s'\n", name)
+				if dryRun {
+					logger.ColorPrintf(jobCtx, "[INFO] DryRun started for Job: '%s'\n", name)
+				}else{
+					logger.ColorPrintf(jobCtx, "[INFO] Execution started for Job: '%s'\n", name)
+				}
 
 				for _, stack := range job.Stacks {
 					var err error
 					if dryRun {
-						logger.ColorPrintf(jobCtx,"[INFO] Executing DryRun on Job: '%s', Stack: '%s'\n", name, stack.StackName)
+						// logger.ColorPrintf(jobCtx,"[INFO] Executing DryRun on Job: '%s', Stack: '%s'\n", name, stack.StackName)
 						err = stack.DryRun(jobCtx, cm)
 					}else{
 						logger.ColorPrintf(jobCtx,"[INFO] Applying Change for Job: '%s', Stack: '%s'\n", name, stack.StackName)
