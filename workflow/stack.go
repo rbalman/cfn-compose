@@ -332,7 +332,7 @@ func (s *Stack) DryRun(ctx context.Context, cm cfn.CFNManager) error {
 			logger.ColorPrintf(ctx,"[INFO] Stack: '%s', Status: %s will be updated.\n\tChangeSet Link: %s\n", s.StackName, status, link)
 
 		default:
-			logger.ColorPrintf(ctx, "[INFO] Can't run the stack operations as Stack: '%s' is in %s state\n", s.StackName, status)
+			logger.ColorPrintf(ctx, "[INFO] Can't run the operations as Stack: '%s' is in %s state\n", s.StackName, status)
 	}
 
 	return nil

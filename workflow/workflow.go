@@ -101,8 +101,8 @@ func Parse(file string) (Workflow, error) {
 				log.Fatal(errors.New(fmt.Sprintf("Shell command failed with: %s\n Error: %s", stderr.String(), err)))
 				return ""
 			}
-
-			log.Println("OUTPUT: ", stdout.String())
+			
+			// log.Println("OUTPUT: ", stdout.String())
 			return strings.TrimSpace(stdout.String())
 		},
 	}).Parse(string(data))

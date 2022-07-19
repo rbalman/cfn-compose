@@ -9,6 +9,7 @@ import (
 	"errors"
 	"time"
 	"context"
+	"strconv"
 )
 
 var colors []string = []string{log.Blue, log.Yellow, log.Green, log.Magenta}
@@ -53,12 +54,23 @@ func main() {
 
 	queuedJob := 0
 	var order uint = 0
+	var dryRunFlag bool
+	
+	dryRunStr, ok := os.LookupEnv("DRY_RUN")
+  if ok {
+		dryRunFlag, err = strconv.ParseBool(dryRunStr)
+		if err != nil {
+			fmt.Printf("DRY_RUN should be either true/false %s", err)
+			return
+		}
+	}
+
 	//Publish work to the worker pool
 	for {
 		var jobsCountInOrder int = 0
 		for name, job := range wf.Jobs {
 			if job.Order == order {
-				work_ch <- Work{JobName: name, Job: job, LogColor: colors[queuedJob], DryRun: true}
+				work_ch <- Work{JobName: name, Job: job, LogColor: colors[queuedJob], DryRun: dryRunFlag }
 				queuedJob++
 				jobsCountInOrder++
 			}
@@ -143,9 +155,9 @@ func ExecuteJob(ctx context.Context, work_ch chan Work, results_ch chan Result, 
 				results_ch <- Result{JobName: name}
 
 			case <- ctx.Done():
-				if err := ctx.Err(); err != nil {
-					fmt.Printf("[DEBUG] Cancel signal received Worker: %d, Info: %s\n", workerId, err)
-				}
+				// if err := ctx.Err(); err != nil {
+				// 	fmt.Printf("[DEBUG] Cancel signal received Worker: %d, Info: %s\n", workerId, err)
+				// }
 				return
 		}
 	}
