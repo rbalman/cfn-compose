@@ -12,7 +12,7 @@ jobs:
     stacks:
       SNSStack:
         template_file: "templates/nop.yml"
-        stack_name: balman-sns-stack
+        stack_name: "{{ .ENV_LABEL }}-sns-stack"
         parameters: 
           EnvironmentType: '{{ .ENV_TYPE }}'
           EnvironmentName: '{{ .ENV_LABEL }}'
@@ -24,7 +24,7 @@ jobs:
 
       SQSStack:
         template_file: "templates/nop.yml"
-        stack_name: balman-sqs-stack
+        stack_name: "{{ .ENV_LABEL }}-sqs-stack"
         capabilities:
           - CAPABILITY_IAM
           - CAPABILITY_NAMED_IAM
@@ -35,12 +35,11 @@ jobs:
           EnvironmentType: '{{ .ENV_TYPE }}'
           EnvironmentName: '{{ .ENV_LABEL }}'
   services:
-    order: 1
     description: "imaginary service job"
     stacks:
       idmservice:
         template_file: "templates/nop.yml"
-        stack_name: balman-oauth2-service
+        stack_name: "{{ .ENV_LABEL }}-oauth2-service"
         capabilities:
           - CAPABILITY_IAM
           - CAPABILITY_NAMED_IAM
@@ -54,7 +53,7 @@ jobs:
       idmlambda:
         enable_change_set: true
         template_file: "templates/nop.yml"
-        stack_name: balman-service
+        stack_name: "{{ .ENV_LABEL }}-service"
         capabilities:
           - CAPABILITY_IAM
           - CAPABILITY_NAMED_IAM
@@ -68,7 +67,7 @@ jobs:
       changeset:
         needs: idmservice
         template_file: "templates/nop.yml"
-        stack_name: balman-change-set
+        stack_name: "{{ .ENV_LABEL }}-change-set"
         capabilities:
           - CAPABILITY_IAM
           - CAPABILITY_NAMED_IAM
@@ -79,12 +78,11 @@ jobs:
           EnvironmentType: '{{ .ENV_TYPE }}'
           EnvironmentName: '{{ .ENV_LABEL }}'
   Lambdas:
-    order: 3
     description: "imaginary service job"
     stacks:
       SNSStack:
         template_file: "templates/nop.yml"
-        stack_name: balman-sqs-consumer
+        stack_name: "{{ .ENV_LABEL }}-sqs-consumer"
         parameters: 
           EnvironmentType: '{{ .ENV_TYPE }}'
           EnvironmentName: '{{ .ENV_LABEL }}'

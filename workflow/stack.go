@@ -309,7 +309,7 @@ func (s *Stack) DryRun(ctx context.Context, cm cfn.CFNManager) error {
 
 	switch status {
 		case "DELETE_COMPLETE", "DOESN'T EXIST":
-			logger.ColorPrintf(ctx,"[INFO] Stack:'%s', Status: '%s' will be created.\n", s.StackName, status)
+			logger.ColorPrintf(ctx,"[INFO] Stack:'%s', Status: '%s'. Will be created.\n", s.StackName, status)
 
 		case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "CREATE_COMPLETE":
 			// logger.ColorPrintf(ctx,"[DEBUG] Creating Changeset... for the stack: %s is at %s state\n", status, s.StackName)
@@ -321,7 +321,7 @@ func (s *Stack) DryRun(ctx context.Context, cm cfn.CFNManager) error {
 			cs, err := cm.CreateChangeSetWithWait(ctx, &i)
 			if err != nil {
 				if strings.Contains(err.Error(), "ResourceNotReady:") {
-					logger.ColorPrintf(ctx,"[INFO] Stack: '%s', Status: %s no change detected.\n", s.StackName, status)
+					logger.ColorPrintf(ctx,"[INFO] Stack: '%s', Status: '%s'. No change detected.\n", s.StackName, status)
 					return nil
 				}
 				return err
@@ -329,7 +329,7 @@ func (s *Stack) DryRun(ctx context.Context, cm cfn.CFNManager) error {
 
 			link := fmt.Sprintf("https://us-east-1.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/changesets/changes?stackId=%s&changeSetId=%s", "us-east-1", url.QueryEscape(*cs.StackId), url.QueryEscape(*cs.Id))
 
-			logger.ColorPrintf(ctx,"[INFO] Stack: '%s', Status: %s will be updated.\n\tChangeSet Link: %s\n", s.StackName, status, link)
+			logger.ColorPrintf(ctx,"[INFO] Stack: '%s', Status: '%s'. Will be updated.\n\tChangeSet Link: %s\n", s.StackName, status, link)
 
 		default:
 			logger.ColorPrintf(ctx, "[INFO] Can't run the operations as Stack: '%s' is in %s state\n", s.StackName, status)
