@@ -72,6 +72,7 @@ jobs:
   manualApproval:
     needs: deploy-staging
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: trstringer/manual-approval@v1
         with:
@@ -79,7 +80,6 @@ jobs:
           approvers: balmanrawat
           minimum-approvals: 1
           issue-title: "Deploying first version in prod"
-          timeout-minutes: 5
 
   deploy-production:
     needs: manualApproval
