@@ -34,8 +34,8 @@ jobs:
         tags:
           EnvironmentType: '{{ .ENV_TYPE }}'
           EnvironmentName: '{{ .ENV_LABEL }}'
-
   services:
+    order: 1
     description: "imaginary service job"
     stacks:
       idmservice:
@@ -53,7 +53,7 @@ jobs:
 
       idmlambda:
         enable_change_set: true
-        template_file: "templates/sg.yml"
+        template_file: "templates/nop.yml"
         stack_name: balman-service
         capabilities:
           - CAPABILITY_IAM
@@ -78,18 +78,18 @@ jobs:
         tags:
           EnvironmentType: '{{ .ENV_TYPE }}'
           EnvironmentName: '{{ .ENV_LABEL }}'
-  # Lambdas:
-  #   order: 1
-  #   description: "imaginary service job"
-  #   stacks:
-  #     SNSStack:
-  #       template_file: "templates/nop.yml"
-  #       stack_name: balman-sqs-consumer
-  #       parameters: 
-  #         EnvironmentType: '{{ .ENV_TYPE }}'
-  #         EnvironmentName: '{{ .ENV_LABEL }}'
-  #       tags:
-  #         EnvironmentType: '{{ .ENV_TYPE }}'
-  #         EnvironmentName: '{{ .ENV_LABEL }}'
-  #       # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
-  #       # timeout: 10
+  Lambdas:
+    order: 3
+    description: "imaginary service job"
+    stacks:
+      SNSStack:
+        template_file: "templates/nop.yml"
+        stack_name: balman-sqs-consumer
+        parameters: 
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
+        # timeout: 10

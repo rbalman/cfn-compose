@@ -210,8 +210,8 @@ func (s *Stack) status(ctx context.Context, cm cfn.CFNManager) (string, error) {
 				case "ValidationError":
 					return "DOESN'T EXIST", nil
 				default:
-					logger.ColorPrintf(ctx,"ERROR CODE: ", aerr.Code())
-					return "", errors.New(fmt.Sprintf("Failed while checking stack status, ERROR: %+v", err.Error()))
+					// logger.ColorPrintf(ctx,"ERROR CODE: %s", aerr.Code())
+					return "", errors.New(fmt.Sprintf("Failed while checking stack status, ERROR %+v", err.Error()))
 			}
 		}
 	}

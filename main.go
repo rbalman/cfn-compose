@@ -29,7 +29,7 @@ type Result struct {
 func main() {
 	ctx := context.Background()
 	ctx, cancelCtx := context.WithCancel(ctx)
-	defer cancelCtx()
+	// defer cancelCtx()
 
 	wf, err := workflow.Parse(os.Getenv("WORKFLOW"))
 	if err != nil {
@@ -43,19 +43,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	work_ch := make(chan Work)
-	results_ch := make(chan Result)
-
-	//Generate the worker pool as pre the job counts
-	jobCounts := len(wf.Jobs)
-	for i := 0; i < jobCounts; i++ {
-		go ExecuteJob(ctx, work_ch, results_ch, i)
-	}
-
-	queuedJob := 0
-	var order uint = 0
-	var dryRunFlag bool
-	
+	var dryRunFlag bool = true
 	dryRunStr, ok := os.LookupEnv("DRY_RUN")
   if ok {
 		dryRunFlag, err = strconv.ParseBool(dryRunStr)
@@ -65,48 +53,57 @@ func main() {
 		}
 	}
 
-	//Publish work to the worker pool
-	for {
-		var jobsCountInOrder int = 0
-		for name, job := range wf.Jobs {
-			if job.Order == order {
-				work_ch <- Work{JobName: name, Job: job, LogColor: colors[queuedJob], DryRun: dryRunFlag }
-				queuedJob++
-				jobsCountInOrder++
-			}
+	//Re-arrage jobs to ordered maps
+	jobMap := make(map[uint][]workflow.Job)
+	for name, job := range wf.Jobs {
+		job.Name = name
+		jobs := jobMap[job.Order]
+		jobs = append(jobs, job)
+		jobMap[job.Order] = jobs
+	}
+
+	workChan := make(chan Work)
+	resultsChan := make(chan Result)
+	//Generate the worker pool as pre the job counts
+	jobCounts := len(wf.Jobs)
+	for i := 0; i < jobCounts; i++ {
+		go ExecuteJob(ctx, workChan, resultsChan, i)
+	}
+
+
+	//Dispatch Jobs in order
+	for order, jobs := range jobMap {
+		for index, job := range jobs {
+			workChan <- Work{JobName: job.Name, Job: job, LogColor: colors[index], DryRun: dryRunFlag }
 		}
-		fmt.Printf("[INFO] Dispatched Order: %d, JobCount: %d.\n", order, jobsCountInOrder)
+
+		fmt.Printf("[INFO] Dispatched Order: %d, JobCount: %d.\n", order, len(jobs))
 
 		//wait for jobs for each order to complete
-		for i := 0; i < jobsCountInOrder ; i++ {
-			// logger.ColorPrintf(ctx,"[INFO] Order: %d, JobCount: %d. Waiting for result\n", order, jobsCountInOrder)
-			r := <- results_ch
-			// fmt.Printf("[DEBUG] Received Signal for Job: %s\n", r.JobName)
+		for i := 0; i < len(jobs) ; i++ {
+			r := <- resultsChan
 			if r.Error != nil {
 				cancelCtx()
 				fmt.Println("[INFO] Graceful wait for cancelled jobs")
 				time.Sleep(time.Second * 10)
-				// fmt.Printf("[DEBUG] Shutting down the process: %s\n", r.JobName)
 				logger.Errorf("Workflow failed. Reason: %s", r.Error)
 				return
 			}
 		}
-			
-		if queuedJob >= jobCounts {
-			break
-		}
-		order++
+		fmt.Printf("[INFO] All Jobs completed for Run Order: %d\n\n", order)
 	}
 
 	cancelCtx()
 	time.Sleep(time.Second*2)
-	logger.ColorPrintf(ctx,"[INFO] Workflow Successfully executed!!")
+	logger.ColorPrintf(ctx,"[INFO] Workflow Successfully Completed!!")
 }
 
-func ExecuteJob(ctx context.Context, work_ch chan Work, results_ch chan Result, workerId int){
+
+func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int){
 	defer func(){
 		fmt.Printf("[DEBUG] Worker: %d exitting...\n", workerId)
 	}()
+
 	sess, err := getAWSSession(os.Getenv("AWS_PROFILE"), os.Getenv("AWS_REGION"))
 	if err != nil {
 		fmt.Printf("[ERROR] Error while getting Session: %s\n", err.Error())
@@ -117,7 +114,7 @@ func ExecuteJob(ctx context.Context, work_ch chan Work, results_ch chan Result, 
 
 	for {
 		select {
-			case work := <- work_ch:
+			case work := <- workChan:
 				//sleeping from readability
 				time.Sleep(time.Millisecond * 500)
 				name := work.JobName
@@ -143,7 +140,7 @@ func ExecuteJob(ctx context.Context, work_ch chan Work, results_ch chan Result, 
 						// logger.ColorPrintf(jobCtx, "[DEBUG] Job: %s Sending Fail Signal\n", name)
 						errStr := fmt.Sprintf("[ERROR] Failed Job: '%s', Stack '%s', Error: %s\n", name, stack.StackName, err)
 						logger.ColorPrintf(jobCtx, errStr)
-						results_ch <- Result{
+						resultsChan <- Result{
 								Error: errors.New(errStr),
 								JobName: name,
 							}
@@ -152,7 +149,7 @@ func ExecuteJob(ctx context.Context, work_ch chan Work, results_ch chan Result, 
 				}
 				// logger.ColorPrintf(jobCtx, "[DEBUG] Sending Success Signal Job: %s\n", name)
 				logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' Completed Successfully!!\n", name)
-				results_ch <- Result{JobName: name}
+				resultsChan <- Result{JobName: name}
 
 			case <- ctx.Done():
 				// if err := ctx.Err(); err != nil {

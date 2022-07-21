@@ -21,6 +21,7 @@ type Workflow struct {
 
 var jobCountLimit int = 5
 type Job struct {
+	Name string `yml:"name"`
 	Description string `yml:"description"`
 	Stacks map[string]Stack `yaml:"stacks`
 	Order uint `yaml:"order"`
