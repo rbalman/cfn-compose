@@ -69,20 +69,19 @@ jobs:
           chmod +x ./cfn-deploy
           ./cfn-deploy
 
-  manualApproval:
-    needs: deploy-staging
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: balmanrawat
-          minimum-approvals: 1
-          issue-title: "Deploying first version in prod"
+  # manualApproval:
+  #   needs: deploy-staging
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
+  #   steps:
+  #     - uses: trstringer/manual-approval@v1
+  #       with:
+  #         secret: ${{ github.TOKEN }}
+  #         approvers: balmanrawat
+  #         minimum-approvals: 1
+  #         issue-title: "Deploying first version in prod"
 
   deploy-production:
-    needs: manualApproval
     name: 'Deploying in Production Environment: ${ENV_LABEL}, Type: ${ENV_TYPE }'
     environment:
       name: production
