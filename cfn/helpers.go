@@ -3,9 +3,10 @@ package cfn
 import (
 	"fmt"
 	"time"
+	"context"
 )
 
-func loader(ch chan bool) {
+func loader(ctx context.Context, ch chan bool) {
 	for {
 		select {
 			case <- ch:
@@ -13,7 +14,7 @@ func loader(ch chan bool) {
 				return
 			default:
 				time.Sleep(500 * time.Millisecond)
-				fmt.Printf(".")
+				logger.ColorPrintf(ctx, ".")
 		}
 	}
 }

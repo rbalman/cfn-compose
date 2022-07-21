@@ -1,0 +1,62 @@
+name: 'Launch Sputnik'
+on:
+  workflow_dispatch:
+    inputs:
+      ENV_LABEL:
+        description: Environment Label
+        required: true
+        default: dev
+      ENV_TYPE:
+        description: Environment Type
+        required: true
+        default: nonproduction
+      DRY_RUN:
+        type: choice
+        description: Dry Run Mode
+        default: true
+        options:
+          - true
+          - false
+      WORKFLOW:
+        description: Name of the workflow file
+        required: true
+        default: workflow.yml
+      ACCOUNT:
+        type: choice
+        description: AWS AccountID
+        default: 290728412178
+        options:
+          - 574574226067
+          - 290728412178
+env:
+  ENV_LABEL: ${{ github.event.inputs.ENV_LABEL }}
+  ENV_TYPE: ${{ github.event.inputs.ENV_TYPE }}
+  ROLE: ${{ secrets.NONPROD_ROLE_ARN }}
+  ROLE_ARN: "arn:aws:iam::${{ github.event.inputs.ACCOUNT }}:role/Power"
+  ENV_LIST_PARAMETER: active-sputnik-environments
+  #Below env vars are for AWS CLI for enabling exponential retry backoff mode.
+  # details: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html#cli-config-retry_mode
+  AWS_MAX_ATTEMPTS: 20
+  AWS_RETRY_MODE: standard
+
+jobs:
+  pre-launch:
+    name: 'Pre-Launch Environment: ${{ github.event.inputs.ENV_LABEL }}, Type: ${{ github.event.inputs.ENV_TYPE }}'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials (nonproduction)
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CENTRAL_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CENTRAL_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          role-to-assume: ${{ env.ROLE_ARN }}
+          role-skip-session-tagging: true
+          mask-aws-account-id: false
+
+      - name: Cache baseinfra-infrastructure
+        id: cache-baseinfra
+        run: cfn-deploy
