@@ -41,8 +41,8 @@ env:
   AWS_RETRY_MODE: standard
 
 jobs:
-  pre-launch:
-    name: 'Pre-Launch Environment: ${{ env.ENV_LABEL }}, Type: ${{ env.ENV_TYPE }}'
+  deploy-staging:
+    name: 'Deploying in Environment: ${{ env.ENV_LABEL }}, Type: ${{ env.ENV_TYPE }}'
     environment:
       name: staging
     env:
@@ -70,6 +70,7 @@ jobs:
           ./cfn-deploy
 
   deploy-production:
+    needs: deploy-staging
     name: 'Deploying in Environment: ${{ env.ENV_LABEL }}, Type: ${{ env.inputs.ENV_TYPE }}'
     environment:
       name: production
