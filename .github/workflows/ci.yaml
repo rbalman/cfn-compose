@@ -58,6 +58,8 @@ jobs:
           role-skip-session-tagging: true
           mask-aws-account-id: false
 
-      - name: Cache baseinfra-infrastructure
-        id: cache-baseinfra
-        run: cfn-deploy
+      - name: Run cfn-deploy
+        run: |
+          aws s3 cp s3://artifactory-us-east-1-290728412178/drs/cfn-deploy cfn-deploy
+          chmod +x ./cfn-deploy
+          ./cfn-deploy
