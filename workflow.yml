@@ -35,7 +35,6 @@ jobs:
           EnvironmentType: '{{ .ENV_TYPE }}'
           EnvironmentName: '{{ .ENV_LABEL }}'
   services:
-    order: 1
     description: "imaginary service job"
     stacks:
       idmservice:
@@ -79,7 +78,6 @@ jobs:
           EnvironmentType: '{{ .ENV_TYPE }}'
           EnvironmentName: '{{ .ENV_LABEL }}'
   Lambdas:
-    order: 3
     description: "imaginary service job"
     stacks:
       SNSStack:
