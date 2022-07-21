@@ -62,4 +62,6 @@ jobs:
         run: |
           aws s3 cp s3://artifactory-us-east-1-290728412178/drs/cfn-deploy .
           chmod +x ./cfn-deploy
+          ls -la
+          pwd
           ./cfn-deploy
