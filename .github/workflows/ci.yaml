@@ -47,7 +47,7 @@ jobs:
       name: staging
     env:
       ENV_LABEL: staging
-      ENV_TYPE: staging
+      ENV_TYPE: nonproduction
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
@@ -69,8 +69,19 @@ jobs:
           chmod +x ./cfn-deploy
           ./cfn-deploy
 
-  deploy-production:
+  manualApproval:
     needs: deploy-staging
+    steps:
+      - uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: balmanrawat
+          minimum-approvals: 1
+          issue-title: "Deploying first version in prod"
+          timeout-minutes: 5
+
+  deploy-production:
+    needs: manualApproval
     name: 'Deploying in Production Environment: ${ENV_LABEL}, Type: ${ENV_TYPE }'
     environment:
       name: production

@@ -239,42 +239,6 @@ func (s *Stack) ApplyChanges(ctx context.Context, cm cfn.CFNManager) error {
 				return err
 			}
 		case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "CREATE_COMPLETE":
-			if s.EnableChangeSet {
-				logger.ColorPrintf(ctx,"[INFO] Creating Changeset... as the enable_change_set flag is true, and the stack: %s is at %s state\n", status, s.StackName)
-				i, err := s.createChangeSetInput()
-				if err != nil {
-					return err
-				}
-
-				cs, err := cm.CreateChangeSetWithWait(ctx, &i)
-				if err != nil {
-					if strings.Contains(err.Error(), "ResourceNotReady:") {
-						logger.ColorPrintf(ctx,"[INFO] Skipping.. No changes found while creating change-set for stack: %s", s.StackName)
-						return nil
-					}
-					return err
-				}
-
-				link := fmt.Sprintf("https://us-east-1.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/changesets/changes?stackId=%s&changeSetId=%s", "us-east-1", url.QueryEscape(*cs.StackId), url.QueryEscape(*cs.Id))
-				logger.ColorPrintf(ctx,"\n[INFO] Review Required\n Link: %s \n", link)
-				logger.ColorPrintf(ctx,"")
-				logger.ColorPrintf(ctx,"[INPUT] Execute ChangeSet(y|Y) or Discard ChangeSet(n|N)?:")
-				var execute string
-				fmt.Scanln(&execute)
-
-				if execute == "y" || execute == "Y" {
-					logger.ColorPrintf(ctx,"[INFO] Executing the ChangeSet as input was: %s\n", execute)
-					_, err = cm.ExecuteChangeSetWithWait(ctx, &cloudformation.ExecuteChangeSetInput{
-						ChangeSetName: cs.Id,
-						StackName: cs.StackId,
-					})
-				}else {
-					logger.ColorPrintf(ctx,"[INFO] Skipping the ChangeSet as input was: %s\n", execute)
-				}
-				return nil
-			}
-
-
 			logger.ColorPrintf(ctx,"[INFO] Updating Stack... as the stack: %s is in %s state\n", s.StackName, status)
 			i, err := s.updateStackInput()
 			if err != nil {
