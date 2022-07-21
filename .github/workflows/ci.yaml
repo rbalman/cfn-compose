@@ -34,6 +34,7 @@ env:
   ROLE: ${{ secrets.NONPROD_ROLE_ARN }}
   ROLE_ARN: "arn:aws:iam::${{ github.event.inputs.ACCOUNT }}:role/Power"
   ENV_LIST_PARAMETER: active-sputnik-environments
+  WORKFLOW: ${{ github.event.inputs.WORKFLOW }}
   #Below env vars are for AWS CLI for enabling exponential retry backoff mode.
   # details: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html#cli-config-retry_mode
   AWS_MAX_ATTEMPTS: 20
