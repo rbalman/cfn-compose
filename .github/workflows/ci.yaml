@@ -42,12 +42,12 @@ env:
 
 jobs:
   deploy-staging:
-    name: 'Deploying in Environment: ${{ env.ENV_LABEL }}, Type: ${{ env.ENV_TYPE }}'
+    name: 'Deploying in Staging Environment: ${ENV_LABEL}, Type: ${ENV_TYPE }'
     environment:
       name: staging
     env:
-      ENV_LABEL: production
-      ENV_TYPE: production
+      ENV_LABEL: staging
+      ENV_TYPE: staging
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
@@ -71,7 +71,7 @@ jobs:
 
   deploy-production:
     needs: deploy-staging
-    name: 'Deploying in Environment: ${{ env.ENV_LABEL }}, Type: ${{ env.inputs.ENV_TYPE }}'
+    name: 'Deploying in Production Environment: ${ENV_LABEL}, Type: ${ENV_TYPE }'
     environment:
       name: production
     runs-on: ubuntu-latest
