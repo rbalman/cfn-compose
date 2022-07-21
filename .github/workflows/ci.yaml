@@ -42,8 +42,41 @@ env:
 
 jobs:
   pre-launch:
-    name: 'Pre-Launch Environment: ${{ github.event.inputs.ENV_LABEL }}, Type: ${{ github.event.inputs.ENV_TYPE }}'
+    name: 'Pre-Launch Environment: ${{ env.ENV_LABEL }}, Type: ${{ env.ENV_TYPE }}'
+    environment:
+      name: staging
+    env:
+      ENV_LABEL: production
+      ENV_TYPE: production
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials (nonproduction)
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CENTRAL_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CENTRAL_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          role-to-assume: ${{ env.ROLE_ARN }}
+          role-skip-session-tagging: true
+          mask-aws-account-id: false
+
+      - name: Run cfn-deploy
+        run: |
+          aws s3 cp s3://artifactory-us-east-1-290728412178/drs/cfn-deploy cfn-deploy
+          chmod +x ./cfn-deploy
+          ./cfn-deploy
+
+  deploy-production:
+    name: 'Deploying in Environment: ${{ env.ENV_LABEL }}, Type: ${{ env.inputs.ENV_TYPE }}'
+    environment:
+      name: production
+    runs-on: ubuntu-latest
+    env:
+      ENV_LABEL: production
+      ENV_TYPE: production
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v2
