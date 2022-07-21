@@ -1,4 +1,4 @@
-name: 'Launch Sputnik'
+name: 'Single Click Deployment'
 on:
   workflow_dispatch:
     inputs:
@@ -58,11 +58,8 @@ jobs:
           role-skip-session-tagging: true
           mask-aws-account-id: false
 
-      - name: Cache baseinfra-infrastructure
-        id: cache-baseinfra
+      - name: Execute the single click
         run: |
           aws s3 cp s3://artifactory-us-east-1-290728412178/drs/cfn-deploy .
           chmod +x ./cfn-deploy
-          ls -la
-          pwd
           ./cfn-deploy
