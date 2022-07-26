@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	workerCount := 20000
+	workerCount := 9000
 	var wg sync.WaitGroup
 	sess, err := session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
@@ -23,7 +23,7 @@ func main() {
 	for i := 0; i < workerCount; i++ {
 		wg.Add(1)
 		go func(i int) {
-			seconds := rand.Intn(100)
+			seconds := rand.Intn(900)
 			fmt.Printf("Worker: %d started and sleeping for: %d seconds\n", i, seconds)
 			time.Sleep(time.Second * time.Duration(seconds))
 			_, err := DescribeStacks(sess, "balman-sqs-consumer")
