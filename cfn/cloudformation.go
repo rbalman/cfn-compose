@@ -80,7 +80,7 @@ func (cm CFNManager) CreateStackWithWait(ctx context.Context, input *cloudformat
 		return nil, errors.New(fmt.Sprintf("stack create wait failed, ERROR: %s", err.Error()))
 	}
 
-	logger.ColorPrint(ctx,"\nWaiting Completed.")
+	logger.ColorPrint(ctx,"\nWait Completed.\n")
 	return res, nil
 }
 

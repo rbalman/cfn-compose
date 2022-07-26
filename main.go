@@ -149,7 +149,12 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 					}
 				}
 				// logger.ColorPrintf(jobCtx, "[DEBUG] Sending Success Signal Job: %s\n", name)
-				logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' Completed Successfully!!\n", name)
+				if dryRun {
+					logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' DryRun Completed Successfully!!\n", name)
+				}else{
+					logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' Completed Successfully!!\n", name)
+				}
+				
 				resultsChan <- Result{JobName: name}
 
 			case <- ctx.Done():
