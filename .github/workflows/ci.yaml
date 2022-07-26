@@ -91,6 +91,7 @@ jobs:
     env:
       ENV_LABEL: uat
       ENV_TYPE: production
+      DRY_RUN: false
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v2
