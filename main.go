@@ -90,7 +90,7 @@ func main() {
 				return
 			}
 		}
-		fmt.Printf("[INFO] All Jobs completed for Run Order: %d\n\n", order)
+		fmt.Printf("[INFO] All Jobs completed for Dispatched Order: %d\n\n", order)
 	}
 
 	cancelCtx()
