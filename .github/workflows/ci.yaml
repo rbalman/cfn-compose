@@ -82,6 +82,7 @@ jobs:
   #         issue-title: "Deploying first version in prod"
 
   deploy-production:
+    needs: deploy-staging
     name: 'Deploying in Production Environment: ${ENV_LABEL}, Type: ${ENV_TYPE }'
     environment:
       name: production

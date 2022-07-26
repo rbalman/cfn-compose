@@ -136,6 +136,7 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 						logger.ColorPrintf(jobCtx,"[INFO] Applying Change for Job: '%s', Stack: '%s'\n", name, stack.StackName)
 						err = stack.ApplyChanges(jobCtx, cm)
 					}
+					
 					if err != nil {
 						// logger.ColorPrintf(jobCtx, "[DEBUG] Job: %s Sending Fail Signal\n", name)
 						errStr := fmt.Sprintf("[ERROR] Failed Job: '%s', Stack '%s', Error: %s\n", name, stack.StackName, err)
