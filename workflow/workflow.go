@@ -13,19 +13,32 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// type Workflow struct {
+// 	Description string            `yml:"description" json:"description"`
+// 	Jobs        map[string]Job    `yml:"jobs" json:"jobs"`
+// 	Vars        map[string]string `yml:"vars" json:"vars"`
+// }
+
 type Workflow struct {
-	Description string            `yml:"description"`
-	Jobs        map[string]Job    `yml:"jobs"`
-	Vars        map[string]string `yml:"vars"`
+	Description string            `yaml:"description"`
+	Jobs        map[string]Job    `yaml:"jobs"`
+	Vars        map[string]string `yaml:"vars"`
 }
 
 var jobCountLimit int = 5
 
+// type Job struct {
+// 	Name        string  `yml:"name" json:"name"`
+// 	Description string  `yml:"description" json:"description"`
+// 	Stacks      []Stack `yaml:"stacks json:"stacks"`
+// 	Order       uint    `yaml:"order" json:"order"`
+// }
+
 type Job struct {
-	Name        string           `yml:"name"`
-	Description string           `yml:"description"`
-	Stacks      map[string]Stack `yaml:"stacks`
-	Order       uint             `yaml:"order"`
+	Name        string  `yaml:"name"`
+	Description string  `yaml:"description"`
+	Stacks      []Stack `yaml:"stacks"`
+	Order       uint    `yaml:"order"`
 }
 
 /*
@@ -39,8 +52,8 @@ func (j *Job) Validate(name string) error {
 		return fmt.Errorf("Stack count is %d for Job: %s, should be '> 0 and <= %d'", len(j.Stacks), name, stackCountLimit)
 	}
 
-	for name, stack := range j.Stacks {
-		err := stack.Validate(name)
+	for i, stack := range j.Stacks {
+		err := stack.Validate(i)
 		if err != nil {
 			return err
 		}
@@ -108,14 +121,14 @@ func Parse(file string) (Workflow, error) {
 		return w, err
 	}
 
-	final_template_file, err := os.Create("/tmp/final-template.yaml")
+	final_template_file, err := os.Create(os.Getenv("WORKFLOW") + ".final.template")
 	if err != nil {
 		return w, err
 	}
 	defer final_template_file.Close()
 	t.Execute(final_template_file, vars)
 
-	varsData, err := os.ReadFile("/tmp/final-template.yaml")
+	varsData, err := os.ReadFile(os.Getenv("WORKFLOW") + ".final.template")
 	if err != nil {
 		return w, err
 	}
@@ -176,7 +189,7 @@ func prepareVariables(data []byte) (map[string]string, error) {
 		return varStruct.Vars, err
 	}
 
-	vars_file, err := os.Create("/tmp/vars.yaml")
+	vars_file, err := os.Create(os.Getenv("WORKFLOW") + ".vars.template")
 	if err != nil {
 		return varStruct.Vars, err
 	}
@@ -187,7 +200,7 @@ func prepareVariables(data []byte) (map[string]string, error) {
 		return varStruct.Vars, err
 	}
 
-	varFileData, err := os.ReadFile("/tmp/vars.yaml")
+	varFileData, err := os.ReadFile(os.Getenv("WORKFLOW") + ".vars.template")
 	if err != nil {
 		return varStruct.Vars, err
 	}

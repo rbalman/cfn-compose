@@ -35,7 +35,7 @@ func main() {
 
 	wf, err := workflow.Parse(os.Getenv("WORKFLOW"))
 	if err != nil {
-		logger.ColorPrintf(ctx, "[ERROR] Error while fetching workflow: %s\n", err.Error())
+		logger.ColorPrintf(ctx, "[ERROR] Failed while fetching workflow: %s\n", err.Error())
 		os.Exit(1)
 	}
 
