@@ -71,25 +71,21 @@ func (w *Workflow) Validate() error {
 //Parsing the configuration file
 func Parse(file string) (Workflow, error) {
 	var w Workflow
-	var wf Workflow
+	// var wf Workflow
 	data, err := os.ReadFile(file)
 	if err != nil {
 		return w, err
 	}
-	err = yaml.Unmarshal([]byte(data), &wf)
+
+	vars, err := prepareVariables(data)
 	if err != nil {
 		return w, err
 	}
 
-	err = overrideWithEnvs(wf.Vars)
-	if err != nil {
-		return w, err
-	}
-
-	t, err := template.New("WorkflowTemplate").Funcs(template.FuncMap{
+	t, err := template.New("WorkFlowTemplate").Funcs(template.FuncMap{
 		"shell": func(bin string, args ...string) string {
 			if len(bin) < 1 {
-				log.Fatal(errors.New("Shell command requires at least one argument, which must be name of the binary."))
+				log.Fatal(errors.New("shell function requires at least one argument, which must be name of the binary."))
 				return ""
 			}
 			cmd := exec.Command(bin, args...)
@@ -112,26 +108,97 @@ func Parse(file string) (Workflow, error) {
 		return w, err
 	}
 
-	tfile, err := os.Create("/tmp/workflow.yaml")
+	final_template_file, err := os.Create("/tmp/final-template.yaml")
 	if err != nil {
 		return w, err
 	}
-	defer tfile.Close()
-	t.Execute(tfile, wf.Vars)
+	defer final_template_file.Close()
+	t.Execute(final_template_file, vars)
 
-	tdata, err := os.ReadFile("/tmp/workflow.yaml")
-	if err != nil {
-		return w, err
-	}
-
-	err = yaml.Unmarshal([]byte(tdata), &w)
+	varsData, err := os.ReadFile("/tmp/final-template.yaml")
 	if err != nil {
 		return w, err
 	}
 
-	w.Vars = wf.Vars
+	err = yaml.Unmarshal([]byte(varsData), &w)
+	if err != nil {
+		return w, err
+	}
+
+	w.Vars = vars
 
 	return w, err
+}
+
+func prepareVariables(data []byte) (map[string]string, error) {
+	varData := struct {
+		Vars map[string]string `yml:"vars"`
+	}{}
+
+	varStruct := struct {
+		Vars map[string]string `yml:"vars"`
+	}{}
+
+	err := yaml.Unmarshal(data, &varData)
+	if err != nil {
+		return varStruct.Vars, err
+	}
+
+	varBytes, err := yaml.Marshal(varData)
+	if err != nil {
+		return varStruct.Vars, err
+	}
+
+	t, err := template.New("VarsTemplate").Funcs(template.FuncMap{
+		"shell": func(bin string, args ...string) string {
+			if len(bin) < 1 {
+				log.Fatal(errors.New("shell function requires at least one argument, which must be name of the binary."))
+				return ""
+			}
+			cmd := exec.Command(bin, args...)
+
+			var stdout, stderr bytes.Buffer
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+
+			err := cmd.Run()
+			if err != nil {
+				log.Fatal(errors.New(fmt.Sprintf("Shell command failed with: %s\n Error: %s", stderr.String(), err)))
+				return ""
+			}
+
+			// log.Println("OUTPUT: ", stdout.String())
+			return strings.TrimSpace(stdout.String())
+		},
+	}).Parse(string(varBytes))
+
+	if err != nil {
+		return varStruct.Vars, err
+	}
+
+	vars_file, err := os.Create("/tmp/vars.yaml")
+	if err != nil {
+		return varStruct.Vars, err
+	}
+
+	defer vars_file.Close()
+	err = t.Execute(vars_file, nil)
+	if err != nil {
+		return varStruct.Vars, err
+	}
+
+	varFileData, err := os.ReadFile("/tmp/vars.yaml")
+	if err != nil {
+		return varStruct.Vars, err
+	}
+
+	err = yaml.Unmarshal([]byte(varFileData), &varStruct)
+	if err != nil {
+		return varStruct.Vars, err
+	}
+
+	err = overrideWithEnvs(varStruct.Vars)
+	return varStruct.Vars, err
 }
 
 func overrideWithEnvs(varsMap map[string]string) error {

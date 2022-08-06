@@ -83,13 +83,13 @@ func main() {
 
 	sess, err := getAWSSession()
 	if err != nil {
-		fmt.Printf("[ERROR] AWS Session not configured properly: %s\n", err.Error())
+		fmt.Printf("[ERROR] Failed while creating AWS Session: %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	identity, err := getCallerIdentity(sess)
 	if err != nil {
-		fmt.Printf("[ERROR] Error couldn't make aws api call: %s\n", err.Error())
+		fmt.Printf("[ERROR] Failed to get AWS caller identity: %s\n", err.Error())
 		os.Exit(1)
 	}
 
