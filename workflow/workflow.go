@@ -1,30 +1,31 @@
 package workflow
 
 import (
-	"os"
-	"gopkg.in/yaml.v2"
-	"fmt"
+	"bytes"
 	"errors"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
 	"strings"
 	"text/template"
-	"os/exec"
-	"bytes"
-	"log"
+
+	"gopkg.in/yaml.v2"
 )
 
-
 type Workflow struct {
-	Description string `yml:"description"`
-	Jobs map[string]Job `yml:"jobs"`
-	Vars map[string]string `yml:"vars"`
+	Description string            `yml:"description"`
+	Jobs        map[string]Job    `yml:"jobs"`
+	Vars        map[string]string `yml:"vars"`
 }
 
 var jobCountLimit int = 5
+
 type Job struct {
-	Name string `yml:"name"`
-	Description string `yml:"description"`
-	Stacks map[string]Stack `yaml:"stacks`
-	Order uint `yaml:"order"`
+	Name        string           `yml:"name"`
+	Description string           `yml:"description"`
+	Stacks      map[string]Stack `yaml:"stacks`
+	Order       uint             `yaml:"order"`
 }
 
 /*
@@ -35,12 +36,12 @@ Job is valid when all of the below conditions are true:
 */
 func (j *Job) Validate(name string) error {
 	if len(j.Stacks) >= stackCountLimit || len(j.Stacks) == 0 {
-		return fmt.Errorf("Stack count is %d for Job: %s, should be '> 0 and <= %d'", len(j.Stacks), name,  stackCountLimit)
+		return fmt.Errorf("Stack count is %d for Job: %s, should be '> 0 and <= %d'", len(j.Stacks), name, stackCountLimit)
 	}
 
 	for name, stack := range j.Stacks {
-		err := stack.Validate(name);
-		if err  != nil {
+		err := stack.Validate(name)
+		if err != nil {
 			return err
 		}
 	}
@@ -54,7 +55,7 @@ Workflow is valid when all of the below conditions are true:
 - When all stacks inside the jobs are valid
 */
 func (w *Workflow) Validate() error {
-	if len(w.Jobs) >= jobCountLimit {
+	if len(w.Jobs) > jobCountLimit {
 		return fmt.Errorf("Job count is %d, should be <= %d", len(w.Jobs), jobCountLimit)
 	}
 
@@ -86,12 +87,12 @@ func Parse(file string) (Workflow, error) {
 	}
 
 	t, err := template.New("WorkflowTemplate").Funcs(template.FuncMap{
-    "shell": func(bin string, args ...string) string {
+		"shell": func(bin string, args ...string) string {
 			if len(bin) < 1 {
 				log.Fatal(errors.New("Shell command requires at least one argument, which must be name of the binary."))
 				return ""
 			}
-      cmd := exec.Command(bin, args...)
+			cmd := exec.Command(bin, args...)
 
 			var stdout, stderr bytes.Buffer
 			cmd.Stdout = &stdout
@@ -102,7 +103,7 @@ func Parse(file string) (Workflow, error) {
 				log.Fatal(errors.New(fmt.Sprintf("Shell command failed with: %s\n Error: %s", stderr.String(), err)))
 				return ""
 			}
-			
+
 			// log.Println("OUTPUT: ", stdout.String())
 			return strings.TrimSpace(stdout.String())
 		},
@@ -128,16 +129,17 @@ func Parse(file string) (Workflow, error) {
 		return w, err
 	}
 
+	w.Vars = wf.Vars
+
 	return w, err
 }
-
 
 func overrideWithEnvs(varsMap map[string]string) error {
 	var err error
 	for _, v := range os.Environ() {
-    split_v := strings.Split(v, "=")
-    varsMap[split_v[0]] = split_v[1]
-  }
+		split_v := strings.Split(v, "=")
+		varsMap[split_v[0]] = split_v[1]
+	}
 
-  return err
+	return err
 }

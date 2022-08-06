@@ -1,15 +1,19 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/aws/aws-sdk-go/aws/client"
 )
 
-func getAWSSession(profile string, region string) (*session.Session, error) {
+func getAWSSession() (*session.Session, error) {
+	region := os.Getenv("AWS_REGION")
 	return session.NewSessionWithOptions(session.Options{
-		Profile: profile,
+		// Profile: profile,
 		Config: aws.Config{
 			Region: &region,
 			Retryer: client.DefaultRetryer{ //https://github.com/aws/aws-sdk-go/tree/main/example/aws/request/customRetryer
@@ -25,4 +29,10 @@ func getCallerIdentity(sess *session.Session) (*sts.GetCallerIdentityOutput, err
 	input := &sts.GetCallerIdentityInput{}
 
 	return svc.GetCallerIdentity(input)
+}
+
+func printCallerIdentity(identity *sts.GetCallerIdentityOutput) {
+	fmt.Printf("Account: %s\n", *identity.Account)
+	fmt.Printf("Region: %s\n", os.Getenv("AWS_REGION"))
+	fmt.Printf("User: %s\n", *identity.UserId)
 }
