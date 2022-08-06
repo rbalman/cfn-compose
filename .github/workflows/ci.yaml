@@ -49,6 +49,7 @@ jobs:
       ENV_LABEL: staging
       ENV_TYPE: nonproduction
       DRY_RUN: false
+      AWS_REGION: us-west-1
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
