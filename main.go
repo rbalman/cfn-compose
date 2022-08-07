@@ -131,7 +131,7 @@ func main() {
 
 func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {
 	defer func() {
-		logger.Log.Debugf("[DEBUG] Worker: %d exiting...\n", workerId)
+		logger.Log.Debugf("Worker: %d exiting...\n", workerId)
 	}()
 
 	for {
