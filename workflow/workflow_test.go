@@ -39,9 +39,9 @@ func TestValidateWorkflow(t *testing.T) {
 		w := Workflow{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: map[string]Stack{
-						"s1": Stack{},
-						"s2": Stack{},
+					Stacks: []Stack{
+						Stack{},
+						Stack{},
 					},
 				},
 				"job2": Job{},
@@ -60,43 +60,43 @@ func TestValidateWorkflow(t *testing.T) {
 		w := Workflow{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: map[string]Stack{
-						"s1":  Stack{},
-						"s2":  Stack{},
-						"s3":  Stack{},
-						"s4":  Stack{},
-						"s5":  Stack{},
-						"s6":  Stack{},
-						"s7":  Stack{},
-						"s8":  Stack{},
-						"s9":  Stack{},
-						"s10": Stack{},
-						"s11": Stack{},
-						"s12": Stack{},
-						"s13": Stack{},
-						"s14": Stack{},
-						"s15": Stack{},
-						"s16": Stack{},
-						"s17": Stack{},
-						"s18": Stack{},
-						"s19": Stack{},
-						"s20": Stack{},
-						"s21": Stack{},
-						"s22": Stack{},
-						"s23": Stack{},
-						"s24": Stack{},
-						"s25": Stack{},
-						"s26": Stack{},
-						"s27": Stack{},
-						"s28": Stack{},
-						"s29": Stack{},
-						"s30": Stack{},
-						"s31": Stack{},
-						"s32": Stack{},
-						"s33": Stack{},
-						"s34": Stack{},
-						"s35": Stack{},
-						"s36": Stack{},
+					Stacks: []Stack{
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
+						Stack{},
 					},
 				},
 				"job2": Job{},
@@ -115,13 +115,13 @@ func TestValidateWorkflow(t *testing.T) {
 		w := Workflow{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: map[string]Stack{
-						"s1": Stack{},
+					Stacks: []Stack{
+						Stack{},
 					},
 				},
 				"job2": Job{
-					Stacks: map[string]Stack{
-						"s1": Stack{},
+					Stacks: []Stack{
+						Stack{},
 					},
 				},
 			},
@@ -138,8 +138,8 @@ func TestValidateWorkflow(t *testing.T) {
 		w := Workflow{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: map[string]Stack{
-						"s1": Stack{
+					Stacks: []Stack{
+						Stack{
 							StackName: "s1-stack",
 						},
 					},
@@ -158,8 +158,8 @@ func TestValidateWorkflow(t *testing.T) {
 		w := Workflow{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: map[string]Stack{
-						"s1": Stack{
+					Stacks: []Stack{
+						Stack{
 							StackName:    "s1-stack",
 							TemplateFile: "/Users/mockuser/cfn-templates/template.yaml",
 							TemplateURL:  "https://artifactory.amazonaws.com/cfn-templates/template.yaml",
@@ -180,8 +180,8 @@ func TestValidateWorkflow(t *testing.T) {
 		w := Workflow{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: map[string]Stack{
-						"s1": Stack{
+					Stacks: []Stack{
+						Stack{
 							StackName:   "s1-stack",
 							TemplateURL: "https://artifactory.amazonaws.com/cfn-templates/template.yaml",
 						},
@@ -201,8 +201,8 @@ func TestValidateWorkflow(t *testing.T) {
 		w := Workflow{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: map[string]Stack{
-						"s1": Stack{
+					Stacks: []Stack{
+						Stack{
 							StackName:    "s1-stack",
 							TemplateFile: "/Users/mockuser/cfn-templates/template.yaml",
 						},

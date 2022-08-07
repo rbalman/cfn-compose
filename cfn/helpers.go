@@ -1,20 +1,20 @@
 package cfn
 
 import (
+	"context"
 	"fmt"
 	"time"
-	"context"
 )
 
 func loader(ctx context.Context, ch chan bool) {
 	for {
 		select {
-			case <- ch:
-				fmt.Println("")
-				return
-			default:
-				time.Sleep(500 * time.Millisecond)
-				logger.ColorPrintf(ctx, ".")
+		case <-ch:
+			fmt.Println("")
+			return
+		default:
+			time.Sleep(500 * time.Millisecond)
+			fmt.Print(".")
 		}
 	}
 }

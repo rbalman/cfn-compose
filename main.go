@@ -2,7 +2,7 @@ package main
 
 import (
 	"cfn-deploy/cfn"
-	"cfn-deploy/log"
+	"cfn-deploy/logger"
 	"cfn-deploy/workflow"
 	"context"
 	"errors"
@@ -12,13 +12,11 @@ import (
 	"time"
 )
 
-var colors []string = []string{log.Blue, log.Yellow, log.Green, log.Magenta, log.Cyan}
-var logger = log.Logger{}
+// var colors []string = []string{log.Blue, log.Yellow, log.Green, log.Magenta, log.Cyan}
 
 type Work struct {
 	JobName    string
 	Job        workflow.Job
-	LogColor   string
 	DryRun     bool
 	CfnManager cfn.CFNManager
 }
@@ -33,15 +31,18 @@ func main() {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	// defer cancelCtx()
 
+	logger.Start(logger.DEBUG)
+
 	wf, err := workflow.Parse(os.Getenv("WORKFLOW"))
 	if err != nil {
-		logger.ColorPrintf(ctx, "[ERROR] Failed while fetching workflow: %s\n", err.Error())
+
+		logger.Log.Errorf("Failed while fetching workflow: %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	err = wf.Validate()
 	if err != nil {
-		logger.ColorPrintf(ctx, "[ERROR] Failed while validating workflow: %s\n", err.Error())
+		logger.Log.Errorf("Failed while validating workflow: %s\n", err.Error())
 		os.Exit(1)
 	}
 
@@ -50,7 +51,7 @@ func main() {
 	if ok {
 		dryRunFlag, err = strconv.ParseBool(dryRunStr)
 		if err != nil {
-			fmt.Printf("DRY_RUN should be either true/false %s", err)
+			logger.Log.Errorf("DRY_RUN should be either true OR false. Error: %s", err)
 			return
 		}
 	}
@@ -83,13 +84,13 @@ func main() {
 
 	sess, err := getAWSSession()
 	if err != nil {
-		fmt.Printf("[ERROR] Failed while creating AWS Session: %s\n", err.Error())
+		logger.Log.Errorf("Failed while creating AWS Session: %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	identity, err := getCallerIdentity(sess)
 	if err != nil {
-		fmt.Printf("[ERROR] Failed to get AWS caller identity: %s\n", err.Error())
+		logger.Log.Errorf("Failed to get AWS caller identity: %s\n", err.Error())
 		os.Exit(1)
 	}
 
@@ -103,34 +104,34 @@ func main() {
 
 	//Dispatch Jobs in order
 	for order, jobs := range jobMap {
-		for index, job := range jobs {
-			workChan <- Work{JobName: job.Name, Job: job, LogColor: colors[index], DryRun: dryRunFlag, CfnManager: cm}
+		for _, job := range jobs {
+			workChan <- Work{JobName: job.Name, Job: job, DryRun: dryRunFlag, CfnManager: cm}
 		}
 
-		fmt.Printf("[INFO] Dispatched Order: %d, JobCount: %d.\n", order, len(jobs))
+		logger.Log.Infof("Dispatched Order: %d, JobCount: %d.\n", order, len(jobs))
 
 		//wait for jobs for each order to complete
 		for i := 0; i < len(jobs); i++ {
 			r := <-resultsChan
 			if r.Error != nil {
 				cancelCtx()
-				fmt.Println("[INFO] Graceful wait for cancelled jobs")
+				logger.Log.Infoln("Graceful wait for cancelled jobs")
 				time.Sleep(time.Second * 10)
-				logger.Errorf("Workflow failed. Reason: %s", r.Error)
+				logger.Log.Errorf("Workflow failed. Error: %s", r.Error)
 				return
 			}
 		}
-		fmt.Printf("[INFO] All Jobs completed for Dispatched Order: %d\n\n", order)
+		logger.Log.Infof("All Jobs completed for Dispatched Order: %d\n\n", order)
 	}
 
 	cancelCtx()
 	time.Sleep(time.Second * 2)
-	logger.ColorPrintf(ctx, "[INFO] Workflow Successfully Completed!!")
+	logger.Log.Infoln("Workflow Successfully Completed!!")
 }
 
 func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {
 	defer func() {
-		fmt.Printf("[DEBUG] Worker: %d exiting...\n", workerId)
+		logger.Log.Debugf("[DEBUG] Worker: %d exiting...\n", workerId)
 	}()
 
 	for {
@@ -142,27 +143,30 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 			job := work.Job
 			dryRun := work.DryRun
 			cm := work.CfnManager
-			jobCtx := context.WithValue(ctx, "logColor", work.LogColor)
+			ctx := context.WithValue(ctx, "job", name)
 			if dryRun {
-				logger.ColorPrintf(jobCtx, "[INFO] DryRun started for Job: '%s'\n", name)
+				logger.Log.InfoCtxf(ctx, "DryRun started")
 			} else {
-				logger.ColorPrintf(jobCtx, "[INFO] Execution started for Job: '%s'\n", name)
+				logger.Log.InfoCtxf(ctx, "Execution started")
 			}
 
 			for _, stack := range job.Stacks {
+				ctx := context.WithValue(ctx, "stack", stack.StackName)
 				var err error
 				if dryRun {
 					// logger.ColorPrintf(jobCtx,"[INFO] Executing DryRun on Job: '%s', Stack: '%s'\n", name, stack.StackName)
-					err = stack.DryRun(jobCtx, cm)
+					err = stack.DryRun(ctx, cm)
 				} else {
-					logger.ColorPrintf(jobCtx, "[INFO] Applying Change for Job: '%s', Stack: '%s'\n", name, stack.StackName)
-					err = stack.ApplyChanges(jobCtx, cm)
+					// logger.Log.Infof("Applying Change for Job: '%s', Stack: '%s'\n", name, stack.StackName)
+					logger.Log.InfoCtxf(ctx, "Applying Change")
+					err = stack.ApplyChanges(ctx, cm)
 				}
 
 				if err != nil {
 					// logger.ColorPrintf(jobCtx, "[DEBUG] Job: %s Sending Fail Signal\n", name)
-					errStr := fmt.Sprintf("[ERROR] Failed Job: '%s', Stack '%s', Error: %s\n", name, stack.StackName, err)
-					logger.ColorPrintf(jobCtx, errStr)
+					errStr := fmt.Sprintf("[JOB: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
+					logger.Log.Infoln(errStr)
+					// logger.ColorPrintf(jobCtx, errStr)
 					resultsChan <- Result{
 						Error:   errors.New(errStr),
 						JobName: name,
@@ -172,9 +176,13 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 			}
 			// logger.ColorPrintf(jobCtx, "[DEBUG] Sending Success Signal Job: %s\n", name)
 			if dryRun {
-				logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' DryRun Completed Successfully!!\n", name)
+				logger.Log.InfoCtxf(ctx, "DryRun Completed Successfully!!")
+				// logger.Log.Infof("Job: '%s' DryRun Completed Successfully!!\n", name)
+				// logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' DryRun Completed Successfully!!\n", name)
 			} else {
-				logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' Completed Successfully!!\n", name)
+				logger.Log.InfoCtxf(ctx, "Completed Successfully!!")
+				// logger.Log.Infof("Job: '%s' Completed Successfully!!\n", name)
+				// logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' Completed Successfully!!\n", name)
 			}
 
 			resultsChan <- Result{JobName: name}

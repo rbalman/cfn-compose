@@ -1,22 +1,22 @@
 package cfn
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"cfn-deploy/logger"
+	"context"
 	"errors"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"fmt"
 	"time"
-	"context"
-	"cfn-deploy/log"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
 type CFNManager struct {
 	Session *session.Session
 }
 
-var logger = log.Logger{}
 //Details about status: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-describing-stacks.html
 
 var CfnStatus []string = []string{"CREATE_IN_PROGRESS", "CREATE_COMPLETE", "ROLLBACK_IN_PROGRESS", "ROLLBACK_FAILED", "ROLLBACK_COMPLETE", "DELETE_IN_PROGRESS", "DELETE_FAILED", "UPDATE_IN_PROGRESS", "UPDATE_COMPLETE_CLEANUP_IN_PROGRESS", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_IN_PROGRESS", "UPDATE_ROLLBACK_FAILED", "UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS", "UPDATE_ROLLBACK_COMPLETE", "REVIEW_IN_PROGRESS"}
@@ -34,7 +34,7 @@ func (cm CFNManager) UpdateStack(input *cloudformation.UpdateStackInput) (*cloud
 
 func (cm CFNManager) DeleteStack(stackName string) (*cloudformation.DeleteStackOutput, error) {
 	input := &cloudformation.DeleteStackInput{
-		StackName:    aws.String(stackName),
+		StackName: aws.String(stackName),
 	}
 
 	svc := cloudformation.New(cm.Session)
@@ -52,18 +52,17 @@ func (cm CFNManager) ExecuteChangeSet(ctx context.Context, input *cloudformation
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
-				case "InvalidChangeSetStatus":
-					logger.ColorPrintf(ctx,"[WARN] Change-set couldn't be applied. Warning: %s\n", err.Error())
-				default:
-					return res, err
+			case "InvalidChangeSetStatus":
+				logger.Log.WarnCtxf(ctx, "Change-set couldn't be applied. Warning: %s\n", err.Error())
+			default:
+				return res, err
 			}
 		}
 	}
 
 	return res, nil
-	
-}
 
+}
 
 //////// MUTABLE WAIT OPERATIONS ////////
 func (cm CFNManager) CreateStackWithWait(ctx context.Context, input *cloudformation.CreateStackInput) (*cloudformation.CreateStackOutput, error) {
@@ -77,13 +76,12 @@ func (cm CFNManager) CreateStackWithWait(ctx context.Context, input *cloudformat
 	err = cm.WaitStackCreateComplete(*input.StackName)
 	ch <- true
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("stack create wait failed, ERROR: %s", err.Error()))
+		return nil, errors.New(fmt.Sprintf("Wait CreateStack failed, ERROR: %s", err.Error()))
 	}
 
-	logger.ColorPrint(ctx,"\nWait Completed.\n")
+	logger.Log.InfoCtxf(ctx, "Create Completed.")
 	return res, nil
 }
-
 
 func (cm CFNManager) UpdateStackWithWait(ctx context.Context, input *cloudformation.UpdateStackInput) (*cloudformation.UpdateStackOutput, error) {
 	res, err := cm.UpdateStack(input)
@@ -96,9 +94,10 @@ func (cm CFNManager) UpdateStackWithWait(ctx context.Context, input *cloudformat
 	err = cm.WaitStackUpdateComplete(*input.StackName)
 	ch <- true
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("stack update wait failed, ERROR: %s", err.Error()))
+		return nil, errors.New(fmt.Sprintf("Wait UpdateStack failed, ERROR: %s", err.Error()))
 	}
 
+	logger.Log.InfoCtxf(ctx, "Update Completed.")
 	return res, nil
 }
 
@@ -113,9 +112,10 @@ func (cm CFNManager) DeleteStackWithWait(ctx context.Context, stackName string) 
 	err = cm.WaitStackDeleteComplete(stackName)
 	ch <- true
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("stack delete wait failed, ERROR: %s", err.Error()))
+		return nil, errors.New(fmt.Sprintf("Wait DeleteStack failed, ERROR: %s", err.Error()))
 	}
 
+	logger.Log.InfoCtxf(ctx, "Delete Completed.")
 	return res, nil
 }
 
@@ -130,7 +130,7 @@ func (cm CFNManager) CreateChangeSetWithWait(ctx context.Context, input *cloudfo
 	err = cm.WaitChangeSetCreateComplete(*input.StackName, *input.ChangeSetName)
 	ch <- true
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("stack change-set create failed, ERROR: %s", err.Error()))
+		return nil, errors.New(fmt.Sprintf("Change-set create failed, ERROR: %s", err.Error()))
 	}
 
 	return res, nil
@@ -148,12 +148,11 @@ func (cm CFNManager) ExecuteChangeSetWithWait(ctx context.Context, input *cloudf
 	err = cm.WaitStackUpdateComplete(*input.StackName)
 	ch <- true
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("stack update wait failed, ERROR: %s", err.Error()))
+		return nil, errors.New(fmt.Sprintf("Wait UpdateStack failed, ERROR: %s", err.Error()))
 	}
 
 	return res, nil
 }
-
 
 //////// WAIT OPERATIONS ////////
 func (cm CFNManager) WaitStackCreateComplete(stackName string) error {
@@ -173,7 +172,7 @@ func (cm CFNManager) WaitChangeSetCreateComplete(stackName string, changesetName
 
 	input := cloudformation.DescribeChangeSetInput{
 		ChangeSetName: &changesetName,
-		StackName: &stackName,
+		StackName:     &stackName,
 	}
 
 	err := svc.WaitUntilChangeSetCreateComplete(&input)
@@ -206,7 +205,7 @@ func (cm CFNManager) WaitStackDeleteComplete(stackName string) error {
 //////// READ OPERATIONS ////////
 func (cm CFNManager) DescribeStacks(stackName string) (*cloudformation.DescribeStacksOutput, error) {
 	input := &cloudformation.DescribeStacksInput{
-		StackName:    aws.String(stackName),
+		StackName: aws.String(stackName),
 	}
 
 	svc := cloudformation.New(cm.Session)
@@ -234,7 +233,7 @@ func (cm CFNManager) DescribeChangeSet(stackName string, changeSetName string) (
 
 	input := cloudformation.DescribeChangeSetInput{
 		ChangeSetName: aws.String(changeSetName),
-		StackName: &stackName,
+		StackName:     &stackName,
 	}
 
 	return svc.DescribeChangeSet(&input)

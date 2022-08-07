@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -32,7 +32,7 @@ func getCallerIdentity(sess *session.Session) (*sts.GetCallerIdentityOutput, err
 }
 
 func printCallerIdentity(identity *sts.GetCallerIdentityOutput) {
-	fmt.Printf("Account: %s\n", *identity.Account)
-	fmt.Printf("Region: %s\n", os.Getenv("AWS_REGION"))
-	fmt.Printf("User: %s\n", *identity.UserId)
+	log.Printf("Account: %s\n", *identity.Account)
+	log.Printf("Region: %s\n", os.Getenv("AWS_REGION"))
+	log.Printf("User: %s\n", *identity.UserId)
 }

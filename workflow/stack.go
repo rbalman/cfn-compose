@@ -2,7 +2,7 @@ package workflow
 
 import (
 	"cfn-deploy/cfn"
-	"cfn-deploy/log"
+	"cfn-deploy/logger"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
-var logger = log.Logger{}
+// var logger = log.Logger{}
 
 const Regions string = "eu-north-1, ap-south-1, eu-west-3, eu-west-2, eu-west-1, ap-northeast-3,  ap-northeast-2, ap-northeast-1, sa-east-1, ca-central-1, ap-southeast-1, ap-southeast-2, eu-central-1, us-east-1, us-east-2, us-west-1, us-west-2"
 
@@ -238,7 +238,7 @@ func (s *Stack) ApplyChanges(ctx context.Context, cm cfn.CFNManager) error {
 
 	switch status {
 	case "DELETE_COMPLETE", "DOESN'T EXIST":
-		logger.ColorPrintf(ctx, "[INFO] Creating Stack... as the stack:%s is in %s state\n", s.StackName, status)
+		logger.Log.InfoCtxf(ctx, "Creating Stack... as the stack is in %s state.\n", status)
 		i, err := s.createStackInput()
 		if err != nil {
 			return err
@@ -249,7 +249,7 @@ func (s *Stack) ApplyChanges(ctx context.Context, cm cfn.CFNManager) error {
 			return err
 		}
 	case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "CREATE_COMPLETE":
-		logger.ColorPrintf(ctx, "[INFO] Updating Stack... as the stack: %s is in %s state\n", s.StackName, status)
+		logger.Log.InfoCtxf(ctx, "Updating Stack... as the stack is in %s state.\n", status)
 		i, err := s.updateStackInput()
 		if err != nil {
 			return err
@@ -260,7 +260,7 @@ func (s *Stack) ApplyChanges(ctx context.Context, cm cfn.CFNManager) error {
 			if aerr, ok := err.(awserr.Error); ok {
 				switch aerr.Code() {
 				case "ValidationError":
-					logger.ColorPrintf(ctx, "[WARN] Skipping... Update for stack: %s. Warning: %s\n", s.StackName, err.Error())
+					logger.Log.WarnCtxf(ctx, "Skipping... Update. Warning: %s\n", err.Error())
 				default:
 					return err
 				}
@@ -282,7 +282,7 @@ func (s *Stack) DryRun(ctx context.Context, cm cfn.CFNManager) error {
 
 	switch status {
 	case "DELETE_COMPLETE", "DOESN'T EXIST":
-		logger.ColorPrintf(ctx, "[INFO] Stack:'%s', Status: '%s'. Will be created.\n", s.StackName, status)
+		logger.Log.InfoCtxf(ctx, "Status: '%s'. Will be created.\n", status)
 
 	case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "CREATE_COMPLETE":
 		// logger.ColorPrintf(ctx,"[DEBUG] Creating Changeset... for the stack: %s is at %s state\n", status, s.StackName)
@@ -294,7 +294,7 @@ func (s *Stack) DryRun(ctx context.Context, cm cfn.CFNManager) error {
 		cs, err := cm.CreateChangeSetWithWait(ctx, &i)
 		if err != nil {
 			if strings.Contains(err.Error(), "ResourceNotReady:") {
-				logger.ColorPrintf(ctx, "[INFO] Stack: '%s', Status: '%s'. No change detected.\n", s.StackName, status)
+				logger.Log.InfoCtxf(ctx, "Status: '%s'. No change detected.\n", status)
 				return nil
 			}
 			return err
@@ -302,10 +302,10 @@ func (s *Stack) DryRun(ctx context.Context, cm cfn.CFNManager) error {
 
 		link := fmt.Sprintf("https://us-east-1.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/changesets/changes?stackId=%s&changeSetId=%s", "us-east-1", url.QueryEscape(*cs.StackId), url.QueryEscape(*cs.Id))
 
-		logger.ColorPrintf(ctx, "[INFO] Stack: '%s', Status: '%s'. Will be updated.\n\tChangeSet Link: %s\n", s.StackName, status, link)
+		logger.Log.InfoCtxf(ctx, "Status: '%s'. Will be updated.\n\tChangeSet Link: %s\n", status, link)
 
 	default:
-		logger.ColorPrintf(ctx, "[INFO] Can't run the operations as Stack: '%s' is in %s state\n", s.StackName, status)
+		logger.Log.InfoCtxf(ctx, "Can't run the operations as Stack is in %s state.\n", status)
 	}
 
 	return nil
