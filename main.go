@@ -57,7 +57,7 @@ func main() {
 	}
 
 	//Re-arrange jobs to ordered maps
-	jobMap := make(map[uint][]workflow.Job)
+	jobMap := make(map[int][]workflow.Job)
 	for name, job := range wf.Jobs {
 		job.Name = name
 		jobs := jobMap[job.Order]
@@ -102,8 +102,15 @@ func main() {
 
 	cm := cfn.CFNManager{Session: sess}
 
+	var order int
 	//Dispatch Jobs in order
-	for order, jobs := range jobMap {
+	for order = 0; order < len(jobMap); order++ {
+		// for order, jobs := range jobMap {
+		jobs, ok := jobMap[order]
+		if !ok {
+			continue
+		}
+
 		for _, job := range jobs {
 			workChan <- Work{JobName: job.Name, Job: job, DryRun: dryRunFlag, CfnManager: cm}
 		}

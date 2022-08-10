@@ -38,7 +38,7 @@ type Job struct {
 	Name        string  `yaml:"name"`
 	Description string  `yaml:"description"`
 	Stacks      []Stack `yaml:"stacks"`
-	Order       uint    `yaml:"order"`
+	Order       int     `yaml:"order"`
 }
 
 /*
