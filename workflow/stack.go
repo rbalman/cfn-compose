@@ -50,15 +50,15 @@ Stack is valid only when it satisfies all the below mentioned conditions:
 */
 func (s *Stack) Validate(index int) error {
 	if s.StackName == "" {
-		return fmt.Errorf("stack_name field for %d index stack is empty", index)
+		return fmt.Errorf("stack_name property for %d index stack is empty", index)
 	}
 
 	if s.TemplateFile == "" && s.TemplateURL == "" {
-		return fmt.Errorf("one of the 'template_file' or 'template_url' should be provided for %d index stack", index)
+		return fmt.Errorf("one of the 'template_file' or 'template_url' property should be provided for %d index stack", index)
 	}
 
 	if s.TemplateFile != "" && s.TemplateURL != "" {
-		return fmt.Errorf("can't provide value for both 'template_file' and 'template_url' for %d index stack", index)
+		return fmt.Errorf("can't provide value for both 'template_file' and 'template_url' property for %d index stack", index)
 	}
 
 	return nil
@@ -163,7 +163,7 @@ func (s *Stack) updateStackInput() (cloudformation.UpdateStackInput, error) {
 }
 
 ///TODO Make Create Changeset Input Method DRY
-func (s *Stack) createChangeSetInput() (cloudformation.CreateChangeSetInput, error) {
+func (s *Stack) createChangeSetInput(ctx context.Context) (cloudformation.CreateChangeSetInput, error) {
 	var capabilities []*string
 	for i, _ := range s.Capabilities {
 		capabilities = append(capabilities, &s.Capabilities[i])
@@ -191,25 +191,33 @@ func (s *Stack) createChangeSetInput() (cloudformation.CreateChangeSetInput, err
 		tags = append(tags, &tag)
 	}
 
-	templateBody, err := ReadTemplate(s.TemplateFile)
-	if err != nil {
-		return cloudformation.CreateChangeSetInput{}, err
-	}
-
 	now := time.Now().Unix()
 	nowStr := strconv.FormatInt(now, 10)
 	changeSetName := s.StackName + "-" + nowStr
-
 	includeNestedStacks := true
-	return cloudformation.CreateChangeSetInput{
+
+	input := cloudformation.CreateChangeSetInput{
 		Capabilities:        capabilities,
 		Parameters:          parameters,
 		StackName:           &s.StackName,
-		TemplateBody:        &templateBody,
 		ChangeSetName:       &changeSetName,
 		Tags:                tags,
 		IncludeNestedStacks: &includeNestedStacks,
-	}, nil
+	}
+
+	if s.TemplateURL != "" {
+		input.TemplateURL = &s.TemplateURL
+	} else {
+		templateBody, err := ReadTemplate(s.TemplateFile)
+		if err != nil {
+			return cloudformation.CreateChangeSetInput{}, err
+		}
+		input.TemplateBody = &templateBody
+	}
+
+	logger.Log.DebugCtxf(ctx, "Create Changeset Input %+v.\n", input)
+
+	return input, nil
 }
 
 func (s *Stack) status(ctx context.Context, cm cfn.CFNManager) (string, error) {
@@ -286,7 +294,7 @@ func (s *Stack) DryRun(ctx context.Context, cm cfn.CFNManager) error {
 
 	case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "CREATE_COMPLETE":
 		// logger.ColorPrintf(ctx,"[DEBUG] Creating Changeset... for the stack: %s is at %s state\n", status, s.StackName)
-		i, err := s.createChangeSetInput()
+		i, err := s.createChangeSetInput(ctx)
 		if err != nil {
 			return err
 		}

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -31,7 +32,7 @@ func main() {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	// defer cancelCtx()
 
-	logger.Start(logger.DEBUG)
+	logger.Start(logger.INFO)
 
 	wf, err := workflow.Parse(os.Getenv("WORKFLOW"))
 	if err != nil {
@@ -56,13 +57,20 @@ func main() {
 		}
 	}
 
+	//MAP
+	// key(order) value Job Array
+	//
 	//Re-arrange jobs to ordered maps
 	jobMap := make(map[int][]workflow.Job)
 	for name, job := range wf.Jobs {
 		job.Name = name
-		jobs := jobMap[job.Order]
-		jobs = append(jobs, job)
-		jobMap[job.Order] = jobs
+		jobs, ok := jobMap[job.Order]
+		if ok {
+			jobs = append(jobs, job)
+			jobMap[job.Order] = jobs
+		} else {
+			jobMap[job.Order] = []workflow.Job{job}
+		}
 	}
 
 	workChan := make(chan Work)
@@ -103,8 +111,15 @@ func main() {
 	cm := cfn.CFNManager{Session: sess}
 
 	var order int
+	var orders []int
+	for key, _ := range jobMap {
+		orders = append(orders, key)
+	}
+
+	logger.Log.Infof("TOTAL JOB COUNT: %d\n", jobCounts)
+	sort.Ints(orders)
 	//Dispatch Jobs in order
-	for order = 0; order < len(jobMap); order++ {
+	for _, order = range orders {
 		// for order, jobs := range jobMap {
 		jobs, ok := jobMap[order]
 		if !ok {
@@ -161,19 +176,15 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 				ctx := context.WithValue(ctx, "stack", stack.StackName)
 				var err error
 				if dryRun {
-					// logger.ColorPrintf(jobCtx,"[INFO] Executing DryRun on Job: '%s', Stack: '%s'\n", name, stack.StackName)
 					err = stack.DryRun(ctx, cm)
 				} else {
-					// logger.Log.Infof("Applying Change for Job: '%s', Stack: '%s'\n", name, stack.StackName)
 					logger.Log.InfoCtxf(ctx, "Applying Change")
 					err = stack.ApplyChanges(ctx, cm)
 				}
 
 				if err != nil {
-					// logger.ColorPrintf(jobCtx, "[DEBUG] Job: %s Sending Fail Signal\n", name)
 					errStr := fmt.Sprintf("[JOB: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
 					logger.Log.Infoln(errStr)
-					// logger.ColorPrintf(jobCtx, errStr)
 					resultsChan <- Result{
 						Error:   errors.New(errStr),
 						JobName: name,
@@ -181,23 +192,19 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 					break
 				}
 			}
-			// logger.ColorPrintf(jobCtx, "[DEBUG] Sending Success Signal Job: %s\n", name)
+
 			if dryRun {
 				logger.Log.InfoCtxf(ctx, "DryRun Completed Successfully!!")
-				// logger.Log.Infof("Job: '%s' DryRun Completed Successfully!!\n", name)
-				// logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' DryRun Completed Successfully!!\n", name)
 			} else {
 				logger.Log.InfoCtxf(ctx, "Completed Successfully!!")
-				// logger.Log.Infof("Job: '%s' Completed Successfully!!\n", name)
-				// logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' Completed Successfully!!\n", name)
 			}
 
 			resultsChan <- Result{JobName: name}
 
 		case <-ctx.Done():
-			// if err := ctx.Err(); err != nil {
-			// 	fmt.Printf("[DEBUG] Cancel signal received Worker: %d, Info: %s\n", workerId, err)
-			// }
+			if err := ctx.Err(); err != nil {
+				logger.Log.DebugCtxf(ctx, "Cancel signal received Worker: %d, Info: %s\n", workerId, err)
+			}
 			return
 		}
 	}

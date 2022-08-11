@@ -10,8 +10,8 @@ func TestValidateWorkflow(t *testing.T) {
 	{
 		var w Workflow
 		err := w.Validate()
-		if err != nil {
-			t.Fatal(fmt.Sprintf("Validation should return nil found %s", err))
+		if err == nil {
+			t.Fatal(fmt.Sprintf("Validation should not return nil"))
 		}
 	}
 
@@ -25,6 +25,56 @@ func TestValidateWorkflow(t *testing.T) {
 				"job4": Job{},
 				"job5": Job{},
 				"job6": Job{},
+			},
+		}
+
+		err := w.Validate()
+		if err == nil {
+			t.Fatal("Validation should return error but found nil", err)
+		}
+	}
+
+	t.Log("When job order is negative")
+	{
+		w := Workflow{
+			Jobs: map[string]Job{
+				"job1": Job{
+					Order: -1,
+					Stacks: []Stack{
+						Stack{},
+					},
+				},
+				"job2": Job{
+					Order: 1,
+					Stacks: []Stack{
+						Stack{},
+					},
+				},
+			},
+		}
+
+		err := w.Validate()
+		if err == nil {
+			t.Fatal("Validation should return error but found nil", err)
+		}
+	}
+
+	t.Log("When job order is greater than 100")
+	{
+		w := Workflow{
+			Jobs: map[string]Job{
+				"job1": Job{
+					Order: 101,
+					Stacks: []Stack{
+						Stack{},
+					},
+				},
+				"job2": Job{
+					Order: 1,
+					Stacks: []Stack{
+						Stack{},
+					},
+				},
 			},
 		}
 
@@ -133,7 +183,7 @@ func TestValidateWorkflow(t *testing.T) {
 		}
 	}
 
-	t.Log("When stack has doesn't provide both template_url/template_file name")
+	t.Log("When stack doesn't provide both template_url/template_file name")
 	{
 		w := Workflow{
 			Jobs: map[string]Job{
@@ -151,6 +201,7 @@ func TestValidateWorkflow(t *testing.T) {
 		if err == nil {
 			t.Fatal("Validation should return error but found nil", err)
 		}
+
 	}
 
 	t.Log("When stack both template_url/template_file is provided")
@@ -214,17 +265,6 @@ func TestValidateWorkflow(t *testing.T) {
 		err := w.Validate()
 		if err != nil {
 			t.Fatal(fmt.Sprintf("Validation should return nil but found error: %s", err))
-		}
-	}
-}
-
-func TestPrepareVariables(t *testing.T) {
-	t.Log("When There are no jobs in Workflow")
-	{
-		var w Workflow
-		err := w.Validate()
-		if err != nil {
-			t.Fatal(fmt.Sprintf("Validation should return nil found %s", err))
 		}
 	}
 }

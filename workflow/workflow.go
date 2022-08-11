@@ -52,6 +52,14 @@ func (j *Job) Validate(name string) error {
 		return fmt.Errorf("Stack count is %d for Job: %s, should be '> 0 and <= %d'", len(j.Stacks), name, stackCountLimit)
 	}
 
+	if j.Order < 0 || j.Order > 100 {
+		return fmt.Errorf("Job Order should be within 0-100 range, found: %d", j.Order)
+	}
+
+	// if j.Order < 0 {
+	// 	return fmt.Errorf("Job Order Can't be negative value, found: %d", j.Order)
+	// }
+
 	for i, stack := range j.Stacks {
 		err := stack.Validate(i)
 		if err != nil {
@@ -72,9 +80,13 @@ func (w *Workflow) Validate() error {
 		return fmt.Errorf("Job count is %d, should be <= %d", len(w.Jobs), jobCountLimit)
 	}
 
+	if len(w.Jobs) <= 0 {
+		return fmt.Errorf("Job count is %d, workflow should have at least one job", len(w.Jobs))
+	}
+
 	for jname, job := range w.Jobs {
 		if err := job.Validate(jname); err != nil {
-			return err
+			return fmt.Errorf("[Job: %s] Error: %s", jname, err.Error())
 		}
 	}
 
