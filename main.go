@@ -2,8 +2,8 @@ package main
 
 import (
 	"cfn-deploy/cfn"
+	"cfn-deploy/compose"
 	"cfn-deploy/logger"
-	"cfn-deploy/workflow"
 	"context"
 	"errors"
 	"fmt"
@@ -17,7 +17,7 @@ import (
 
 type Work struct {
 	JobName    string
-	Job        workflow.Job
+	Job        compose.Job
 	DryRun     bool
 	CfnManager cfn.CFNManager
 }
@@ -34,16 +34,15 @@ func main() {
 
 	logger.Start(logger.INFO)
 
-	wf, err := workflow.Parse(os.Getenv("WORKFLOW"))
+	wf, err := compose.Parse(os.Getenv("CFN_COMPOSE"))
 	if err != nil {
-
-		logger.Log.Errorf("Failed while fetching workflow: %s\n", err.Error())
+		logger.Log.Errorf("Failed while fetching compose file: %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	err = wf.Validate()
 	if err != nil {
-		logger.Log.Errorf("Failed while validating workflow: %s\n", err.Error())
+		logger.Log.Errorf("Failed while validating compose file: %s\n", err.Error())
 		os.Exit(1)
 	}
 
@@ -61,7 +60,7 @@ func main() {
 	// key(order) value Job Array
 	//
 	//Re-arrange jobs to ordered maps
-	jobMap := make(map[int][]workflow.Job)
+	jobMap := make(map[int][]compose.Job)
 	for name, job := range wf.Jobs {
 		job.Name = name
 		jobs, ok := jobMap[job.Order]
@@ -69,7 +68,7 @@ func main() {
 			jobs = append(jobs, job)
 			jobMap[job.Order] = jobs
 		} else {
-			jobMap[job.Order] = []workflow.Job{job}
+			jobMap[job.Order] = []compose.Job{job}
 		}
 	}
 
@@ -139,7 +138,7 @@ func main() {
 				cancelCtx()
 				logger.Log.Infoln("Graceful wait for cancelled jobs")
 				time.Sleep(time.Second * 10)
-				logger.Log.Errorf("Workflow failed. Error: %s", r.Error)
+				logger.Log.Errorf("cfn compose failed. Error: %s", r.Error)
 				return
 			}
 		}
@@ -148,7 +147,7 @@ func main() {
 
 	cancelCtx()
 	time.Sleep(time.Second * 2)
-	logger.Log.Infoln("Workflow Successfully Completed!!")
+	logger.Log.Infoln("Cfn Compose Successfully Completed!!")
 }
 
 func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {

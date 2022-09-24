@@ -1,15 +1,15 @@
-package workflow
+package compose
 
 import (
 	"fmt"
 	"testing"
 )
 
-func TestValidateWorkflow(t *testing.T) {
-	t.Log("When There are no jobs in Workflow")
+func TestValidateComposeConfig(t *testing.T) {
+	t.Log("When There are no jobs in Compose")
 	{
-		var w Workflow
-		err := w.Validate()
+		var cc ComposeConfig
+		err := cc.Validate()
 		if err == nil {
 			t.Fatal(fmt.Sprintf("Validation should not return nil"))
 		}
@@ -17,7 +17,7 @@ func TestValidateWorkflow(t *testing.T) {
 
 	t.Log("When jobs count is above the limit")
 	{
-		w := Workflow{
+		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{},
 				"job2": Job{},
@@ -28,7 +28,7 @@ func TestValidateWorkflow(t *testing.T) {
 			},
 		}
 
-		err := w.Validate()
+		err := cc.Validate()
 		if err == nil {
 			t.Fatal("Validation should return error but found nil", err)
 		}
@@ -36,7 +36,7 @@ func TestValidateWorkflow(t *testing.T) {
 
 	t.Log("When job order is negative")
 	{
-		w := Workflow{
+		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
 					Order: -1,
@@ -53,7 +53,7 @@ func TestValidateWorkflow(t *testing.T) {
 			},
 		}
 
-		err := w.Validate()
+		err := cc.Validate()
 		if err == nil {
 			t.Fatal("Validation should return error but found nil", err)
 		}
@@ -61,7 +61,7 @@ func TestValidateWorkflow(t *testing.T) {
 
 	t.Log("When job order is greater than 100")
 	{
-		w := Workflow{
+		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
 					Order: 101,
@@ -78,7 +78,7 @@ func TestValidateWorkflow(t *testing.T) {
 			},
 		}
 
-		err := w.Validate()
+		err := cc.Validate()
 		if err == nil {
 			t.Fatal("Validation should return error but found nil", err)
 		}
@@ -86,7 +86,7 @@ func TestValidateWorkflow(t *testing.T) {
 
 	t.Log("When one or more job doesn't have any stack")
 	{
-		w := Workflow{
+		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
 					Stacks: []Stack{
@@ -99,7 +99,7 @@ func TestValidateWorkflow(t *testing.T) {
 			},
 		}
 
-		err := w.Validate()
+		err := cc.Validate()
 		if err == nil {
 			t.Fatal("Validation should return error but found nil", err)
 		}
@@ -107,7 +107,7 @@ func TestValidateWorkflow(t *testing.T) {
 
 	t.Log("When one or more job has stacks above the limit")
 	{
-		w := Workflow{
+		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
 					Stacks: []Stack{
@@ -154,7 +154,7 @@ func TestValidateWorkflow(t *testing.T) {
 			},
 		}
 
-		err := w.Validate()
+		err := cc.Validate()
 		if err == nil {
 			t.Fatal("Validation should return error but found nil", err)
 		}
@@ -162,7 +162,7 @@ func TestValidateWorkflow(t *testing.T) {
 
 	t.Log("When stack doesn't have a name")
 	{
-		w := Workflow{
+		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
 					Stacks: []Stack{
@@ -177,7 +177,7 @@ func TestValidateWorkflow(t *testing.T) {
 			},
 		}
 
-		err := w.Validate()
+		err := cc.Validate()
 		if err == nil {
 			t.Fatal("Validation should return error but found nil", err)
 		}
@@ -185,7 +185,7 @@ func TestValidateWorkflow(t *testing.T) {
 
 	t.Log("When stack doesn't provide both template_url/template_file name")
 	{
-		w := Workflow{
+		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
 					Stacks: []Stack{
@@ -197,7 +197,7 @@ func TestValidateWorkflow(t *testing.T) {
 			},
 		}
 
-		err := w.Validate()
+		err := cc.Validate()
 		if err == nil {
 			t.Fatal("Validation should return error but found nil", err)
 		}
@@ -206,7 +206,7 @@ func TestValidateWorkflow(t *testing.T) {
 
 	t.Log("When stack both template_url/template_file is provided")
 	{
-		w := Workflow{
+		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
 					Stacks: []Stack{
@@ -220,7 +220,7 @@ func TestValidateWorkflow(t *testing.T) {
 			},
 		}
 
-		err := w.Validate()
+		err := cc.Validate()
 		if err == nil {
 			t.Fatal("Validation should return error but found nil", err)
 		}
@@ -228,7 +228,7 @@ func TestValidateWorkflow(t *testing.T) {
 
 	t.Log("When only template_url is provided")
 	{
-		w := Workflow{
+		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
 					Stacks: []Stack{
@@ -241,7 +241,7 @@ func TestValidateWorkflow(t *testing.T) {
 			},
 		}
 
-		err := w.Validate()
+		err := cc.Validate()
 		if err != nil {
 			t.Fatal(fmt.Sprintf("Validation should return nil but found error: %s", err))
 		}
@@ -249,7 +249,7 @@ func TestValidateWorkflow(t *testing.T) {
 
 	t.Log("When only template_file is provided")
 	{
-		w := Workflow{
+		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
 					Stacks: []Stack{
@@ -262,7 +262,7 @@ func TestValidateWorkflow(t *testing.T) {
 			},
 		}
 
-		err := w.Validate()
+		err := cc.Validate()
 		if err != nil {
 			t.Fatal(fmt.Sprintf("Validation should return nil but found error: %s", err))
 		}

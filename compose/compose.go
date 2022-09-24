@@ -1,4 +1,4 @@
-package workflow
+package compose
 
 import (
 	"bytes"
@@ -13,26 +13,13 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// type Workflow struct {
-// 	Description string            `yml:"description" json:"description"`
-// 	Jobs        map[string]Job    `yml:"jobs" json:"jobs"`
-// 	Vars        map[string]string `yml:"vars" json:"vars"`
-// }
-
-type Workflow struct {
+type ComposeConfig struct {
 	Description string            `yaml:"description"`
 	Jobs        map[string]Job    `yaml:"jobs"`
 	Vars        map[string]string `yaml:"vars"`
 }
 
 var jobCountLimit int = 5
-
-// type Job struct {
-// 	Name        string  `yml:"name" json:"name"`
-// 	Description string  `yml:"description" json:"description"`
-// 	Stacks      []Stack `yaml:"stacks json:"stacks"`
-// 	Order       uint    `yaml:"order" json:"order"`
-// }
 
 type Job struct {
 	Name        string  `yaml:"name"`
@@ -70,21 +57,21 @@ func (j *Job) Validate(name string) error {
 }
 
 /*
-Workflow is valid when all of the below conditions are true:
+ComposeConfig is valid when all of the below conditions are true:
 - When Job counts is <= jobCoutLimit
 - When all jobs are valid
 - When all stacks inside the jobs are valid
 */
-func (w *Workflow) Validate() error {
-	if len(w.Jobs) > jobCountLimit {
-		return fmt.Errorf("Job count is %d, should be <= %d", len(w.Jobs), jobCountLimit)
+func (c *ComposeConfig) Validate() error {
+	if len(c.Jobs) > jobCountLimit {
+		return fmt.Errorf("Job count is %d, should be <= %d", len(c.Jobs), jobCountLimit)
 	}
 
-	if len(w.Jobs) <= 0 {
-		return fmt.Errorf("Job count is %d, workflow should have at least one job", len(w.Jobs))
+	if len(c.Jobs) <= 0 {
+		return fmt.Errorf("Job count is %d, compose config should have at least one job", len(c.Jobs))
 	}
 
-	for jname, job := range w.Jobs {
+	for jname, job := range c.Jobs {
 		if err := job.Validate(jname); err != nil {
 			return fmt.Errorf("[Job: %s] Error: %s", jname, err.Error())
 		}
@@ -94,20 +81,26 @@ func (w *Workflow) Validate() error {
 }
 
 //Parsing the configuration file
-func Parse(file string) (Workflow, error) {
-	var w Workflow
-	// var wf Workflow
+func Parse(file string) (ComposeConfig, error) {
+	if _, err := os.Stat(".cfn-compose"); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir(".cfn-compose", os.ModePerm)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+
+	var cc ComposeConfig
 	data, err := os.ReadFile(file)
 	if err != nil {
-		return w, err
+		return cc, err
 	}
 
 	vars, err := prepareVariables(data)
 	if err != nil {
-		return w, err
+		return cc, err
 	}
 
-	t, err := template.New("WorkFlowTemplate").Funcs(template.FuncMap{
+	t, err := template.New("ComposeConfigTemplate").Funcs(template.FuncMap{
 		"shell": func(bin string, args ...string) string {
 			if len(bin) < 1 {
 				log.Fatal(errors.New("shell function requires at least one argument, which must be name of the binary."))
@@ -125,34 +118,33 @@ func Parse(file string) (Workflow, error) {
 				return ""
 			}
 
-			// log.Println("OUTPUT: ", stdout.String())
 			return strings.TrimSpace(stdout.String())
 		},
 	}).Parse(string(data))
 	if err != nil {
-		return w, err
+		return cc, err
 	}
 
-	final_template_file, err := os.Create(os.Getenv("WORKFLOW") + ".final.template")
+	final_template_file, err := os.Create(".cfn-compose/" + "compose.yml")
 	if err != nil {
-		return w, err
+		return cc, err
 	}
 	defer final_template_file.Close()
 	t.Execute(final_template_file, vars)
 
-	varsData, err := os.ReadFile(os.Getenv("WORKFLOW") + ".final.template")
+	varsData, err := os.ReadFile(".cfn-compose/" + "compose.yml")
 	if err != nil {
-		return w, err
+		return cc, err
 	}
 
-	err = yaml.Unmarshal([]byte(varsData), &w)
+	err = yaml.Unmarshal([]byte(varsData), &cc)
 	if err != nil {
-		return w, err
+		return cc, err
 	}
 
-	w.Vars = vars
+	cc.Vars = vars
 
-	return w, err
+	return cc, err
 }
 
 func prepareVariables(data []byte) (map[string]string, error) {
@@ -201,7 +193,7 @@ func prepareVariables(data []byte) (map[string]string, error) {
 		return varStruct.Vars, err
 	}
 
-	vars_file, err := os.Create(os.Getenv("WORKFLOW") + ".vars.template")
+	vars_file, err := os.Create(".cfn-compose/" + "vars.yml")
 	if err != nil {
 		return varStruct.Vars, err
 	}
@@ -212,7 +204,7 @@ func prepareVariables(data []byte) (map[string]string, error) {
 		return varStruct.Vars, err
 	}
 
-	varFileData, err := os.ReadFile(os.Getenv("WORKFLOW") + ".vars.template")
+	varFileData, err := os.ReadFile(".cfn-compose/" + "vars.yml")
 	if err != nil {
 		return varStruct.Vars, err
 	}

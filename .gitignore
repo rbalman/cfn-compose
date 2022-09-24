@@ -1,2 +1,3 @@
-cfn-deploy
+cfn-compose
+.cfn-compose
 .vscode

@@ -1,4 +1,4 @@
-package workflow
+package compose
 
 import (
 	"cfn-deploy/cfn"
