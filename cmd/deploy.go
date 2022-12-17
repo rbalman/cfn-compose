@@ -11,7 +11,7 @@ var dryRun bool
 
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
-	Short: "deploy changes if any",
+	Short: "deploy changes in the compose file",
 	Aliases: []string{"d"},
 	Long:  `Creates/Updates CFN resources if required`,
 	Run: func(cmd *cobra.Command, args []string) {

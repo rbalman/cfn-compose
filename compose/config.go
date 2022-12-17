@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 	"text/template"
+	"github.com/balmanrawat/cfn-compose/cfn"
 
 	"gopkg.in/yaml.v2"
 )
@@ -20,14 +21,18 @@ type ComposeConfig struct {
 }
 
 var jobCountLimit int = 5
+const composeDir string = ".cfn-compose"
+const varsTemplate string = "var.yml"
+const composeTemplate string = "compose.yml"
 
 type Job struct {
 	Name        string  `yaml:"name"`
 	Description string  `yaml:"description"`
-	Stacks      []Stack `yaml:"stacks"`
+	Stacks      []cfn.Stack `yaml:"stacks"`
 	Order       int     `yaml:"order"`
 }
 
+var stackCountLimit int = 30
 /*
 Job is valid when all of the below conditions are true:
 - When Stack counts is <= stackCountLimit
@@ -82,8 +87,8 @@ func (c *ComposeConfig) Validate() error {
 
 //Parsing the configuration file
 func Parse(file string) (ComposeConfig, error) {
-	if _, err := os.Stat(".cfn-compose"); errors.Is(err, os.ErrNotExist) {
-		err := os.Mkdir(".cfn-compose", os.ModePerm)
+	if _, err := os.Stat(composeDir); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir(composeDir, os.ModePerm)
 		if err != nil {
 			log.Println(err)
 		}
@@ -125,14 +130,14 @@ func Parse(file string) (ComposeConfig, error) {
 		return cc, err
 	}
 
-	final_template_file, err := os.Create(".cfn-compose/" + "compose.yml")
+	final_template_file, err := os.Create(composeDir + "/" + composeTemplate)
 	if err != nil {
 		return cc, err
 	}
 	defer final_template_file.Close()
 	t.Execute(final_template_file, vars)
 
-	varsData, err := os.ReadFile(".cfn-compose/" + "compose.yml")
+	varsData, err := os.ReadFile(composeDir + "/" + composeTemplate)
 	if err != nil {
 		return cc, err
 	}
@@ -193,7 +198,7 @@ func prepareVariables(data []byte) (map[string]string, error) {
 		return varStruct.Vars, err
 	}
 
-	vars_file, err := os.Create(".cfn-compose/" + "vars.yml")
+	vars_file, err := os.Create(composeDir + "/" + varsTemplate)
 	if err != nil {
 		return varStruct.Vars, err
 	}
@@ -204,7 +209,7 @@ func prepareVariables(data []byte) (map[string]string, error) {
 		return varStruct.Vars, err
 	}
 
-	varFileData, err := os.ReadFile(".cfn-compose/" + "vars.yml")
+	varFileData, err := os.ReadFile(composeDir + "/" + varsTemplate)
 	if err != nil {
 		return varStruct.Vars, err
 	}

@@ -8,6 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
+	"context"
+	"time"
 )
 
 func GetAWSSession() (*session.Session, error) {
@@ -35,4 +37,25 @@ func PrintCallerIdentity(identity *sts.GetCallerIdentityOutput) {
 	fmt.Printf("Account: %s\n", *identity.Account)
 	fmt.Printf("Region: %s\n", os.Getenv("AWS_REGION"))
 	fmt.Printf("User: %s\n", *identity.UserId)
+}
+
+func ReadTemplate(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func Loader(ctx context.Context, ch chan bool) {
+	for {
+		select {
+		case <-ch:
+			fmt.Printf("\n")
+			return
+		default:
+			time.Sleep(500 * time.Millisecond)
+			fmt.Print(".")
+		}
+	}
 }

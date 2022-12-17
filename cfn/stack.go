@@ -1,8 +1,8 @@
-package compose
+package cfn
 
 import (
-	"github.com/balmanrawat/cfn-compose/cfn"
 	"github.com/balmanrawat/cfn-compose/logger"
+	"github.com/balmanrawat/cfn-compose/libs"
 	"context"
 	"errors"
 	"fmt"
@@ -40,8 +40,6 @@ type Stack struct {
 	Tags             map[string]string `yaml:"tags"`
 	TimeoutInMinutes int64             `yaml:"timeout"`
 }
-
-var stackCountLimit int = 30
 
 /*
 Stack is valid only when it satisfies all the below mentioned conditions:
@@ -103,7 +101,7 @@ func (s *Stack) createStackInput() (cloudformation.CreateStackInput, error) {
 	if s.TemplateURL != "" {
 		input.TemplateURL = &s.TemplateURL
 	} else {
-		templateBody, err := ReadTemplate(s.TemplateFile)
+		templateBody, err := libs.ReadTemplate(s.TemplateFile)
 		if err != nil {
 			return cloudformation.CreateStackInput{}, err
 		}
@@ -152,7 +150,7 @@ func (s *Stack) updateStackInput() (cloudformation.UpdateStackInput, error) {
 	if s.TemplateURL != "" {
 		input.TemplateURL = &s.TemplateURL
 	} else {
-		templateBody, err := ReadTemplate(s.TemplateFile)
+		templateBody, err := libs.ReadTemplate(s.TemplateFile)
 		if err != nil {
 			return cloudformation.UpdateStackInput{}, err
 		}
@@ -208,7 +206,7 @@ func (s *Stack) createChangeSetInput(ctx context.Context) (cloudformation.Create
 	if s.TemplateURL != "" {
 		input.TemplateURL = &s.TemplateURL
 	} else {
-		templateBody, err := ReadTemplate(s.TemplateFile)
+		templateBody, err := libs.ReadTemplate(s.TemplateFile)
 		if err != nil {
 			return cloudformation.CreateChangeSetInput{}, err
 		}
@@ -220,7 +218,7 @@ func (s *Stack) createChangeSetInput(ctx context.Context) (cloudformation.Create
 	return input, nil
 }
 
-func (s *Stack) status(ctx context.Context, cm cfn.CFNManager) (string, error) {
+func (s *Stack) status(ctx context.Context, cm CFNManager) (string, error) {
 	res, err := cm.DescribeStacks(s.StackName)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
@@ -238,7 +236,7 @@ func (s *Stack) status(ctx context.Context, cm cfn.CFNManager) (string, error) {
 	return *cfnStack.StackStatus, nil
 }
 
-func (s *Stack) ApplyChanges(ctx context.Context, cm cfn.CFNManager) error {
+func (s *Stack) ApplyChanges(ctx context.Context, cm CFNManager) error {
 	status, err := s.status(ctx, cm)
 	if err != nil {
 		return err
@@ -282,7 +280,7 @@ func (s *Stack) ApplyChanges(ctx context.Context, cm cfn.CFNManager) error {
 	return nil
 }
 
-func (s *Stack) DryRun(ctx context.Context, cm cfn.CFNManager) error {
+func (s *Stack) DryRun(ctx context.Context, cm CFNManager) error {
 	status, err := s.status(ctx, cm)
 	if err != nil {
 		return err

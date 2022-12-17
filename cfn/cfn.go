@@ -2,6 +2,7 @@ package cfn
 
 import (
 	"github.com/balmanrawat/cfn-compose/logger"
+	"github.com/balmanrawat/cfn-compose/libs"
 	"context"
 	"errors"
 	"fmt"
@@ -72,7 +73,7 @@ func (cm CFNManager) CreateStackWithWait(ctx context.Context, input *cloudformat
 	}
 
 	ch := make(chan bool)
-	go loader(ctx, ch)
+	go libs.Loader(ctx, ch)
 	err = cm.WaitStackCreateComplete(*input.StackName)
 	ch <- true
 	if err != nil {
@@ -90,7 +91,7 @@ func (cm CFNManager) UpdateStackWithWait(ctx context.Context, input *cloudformat
 	}
 
 	ch := make(chan bool)
-	go loader(ctx, ch)
+	go libs.Loader(ctx, ch)
 	err = cm.WaitStackUpdateComplete(*input.StackName)
 	ch <- true
 	if err != nil {
@@ -108,7 +109,7 @@ func (cm CFNManager) DeleteStackWithWait(ctx context.Context, stackName string) 
 	}
 
 	ch := make(chan bool)
-	go loader(ctx, ch)
+	go libs.Loader(ctx, ch)
 	err = cm.WaitStackDeleteComplete(stackName)
 	ch <- true
 	if err != nil {
@@ -126,7 +127,7 @@ func (cm CFNManager) CreateChangeSetWithWait(ctx context.Context, input *cloudfo
 	}
 
 	ch := make(chan bool)
-	go loader(ctx, ch)
+	go libs.Loader(ctx, ch)
 	err = cm.WaitChangeSetCreateComplete(*input.StackName, *input.ChangeSetName)
 	ch <- true
 	if err != nil {
@@ -144,7 +145,7 @@ func (cm CFNManager) ExecuteChangeSetWithWait(ctx context.Context, input *cloudf
 
 	time.Sleep(5 * time.Second)
 	ch := make(chan bool)
-	go loader(ctx, ch)
+	go libs.Loader(ctx, ch)
 	err = cm.WaitStackUpdateComplete(*input.StackName)
 	ch <- true
 	if err != nil {
