@@ -1,29 +1,30 @@
 package main
 
 import (
-	"fmt"
 	"cfn-deploy/cfn"
-	"cfn-deploy/workflow"
-	"cfn-deploy/log"
-	"os"
-	"errors"
-	"time"
+	"cfn-deploy/compose"
+	"cfn-deploy/logger"
 	"context"
+	"errors"
+	"fmt"
+	"os"
+	"sort"
 	"strconv"
+	"time"
 )
 
-var colors []string = []string{log.Blue, log.Yellow, log.Green, log.Magenta}
-var logger = log.Logger{}
+// var colors []string = []string{log.Blue, log.Yellow, log.Green, log.Magenta, log.Cyan}
+
 type Work struct {
-	JobName string
-	Job workflow.Job
-	LogColor string
-	DryRun bool
+	JobName    string
+	Job        compose.Job
+	DryRun     bool
+	CfnManager cfn.CFNManager
 }
 
 type Result struct {
 	JobName string
-	Error error
+	Error   error
 }
 
 func main() {
@@ -31,35 +32,44 @@ func main() {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	// defer cancelCtx()
 
-	wf, err := workflow.Parse(os.Getenv("WORKFLOW"))
+	logger.Start(logger.INFO)
+
+	wf, err := compose.Parse(os.Getenv("CFN_COMPOSE"))
 	if err != nil {
-		logger.ColorPrintf(ctx, "[ERROR] Error while fetching workflow: %s\n", err.Error())
+		logger.Log.Errorf("Failed while fetching compose file: %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	err = wf.Validate()
-	if err  != nil {
-		logger.ColorPrintf(ctx,"[ERROR] Failed while validating workflow: %s\n", err.Error())
+	if err != nil {
+		logger.Log.Errorf("Failed while validating compose file: %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	var dryRunFlag bool = true
 	dryRunStr, ok := os.LookupEnv("DRY_RUN")
-  if ok {
+	if ok {
 		dryRunFlag, err = strconv.ParseBool(dryRunStr)
 		if err != nil {
-			fmt.Printf("DRY_RUN should be either true/false %s", err)
+			logger.Log.Errorf("DRY_RUN should be either true OR false. Error: %s", err)
 			return
 		}
 	}
 
-	//Re-arrage jobs to ordered maps
-	jobMap := make(map[uint][]workflow.Job)
+	//MAP
+	// key(order) value Job Array
+	//
+	//Re-arrange jobs to ordered maps
+	jobMap := make(map[int][]compose.Job)
 	for name, job := range wf.Jobs {
 		job.Name = name
-		jobs := jobMap[job.Order]
-		jobs = append(jobs, job)
-		jobMap[job.Order] = jobs
+		jobs, ok := jobMap[job.Order]
+		if ok {
+			jobs = append(jobs, job)
+			jobMap[job.Order] = jobs
+		} else {
+			jobMap[job.Order] = []compose.Job{job}
+		}
 	}
 
 	workChan := make(chan Work)
@@ -70,92 +80,131 @@ func main() {
 		go ExecuteJob(ctx, workChan, resultsChan, i)
 	}
 
+	// Exporting AWS_PROFILE and AWS_REGION for aws sdk client
+	if val, ok := wf.Vars["AWS_PROFILE"]; ok {
+		os.Setenv("AWS_PROFILE", val)
+	}
 
+	if val, ok := wf.Vars["AWS_REGION"]; ok {
+		os.Setenv("AWS_REGION", val)
+	}
+
+	sess, err := getAWSSession()
+	if err != nil {
+		logger.Log.Errorf("Failed while creating AWS Session: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	identity, err := getCallerIdentity(sess)
+	if err != nil {
+		logger.Log.Errorf("Failed to get AWS caller identity: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	fmt.Println("##############################")
+	fmt.Println("# Supplied AWS Configuration #")
+	fmt.Println("##############################")
+	printCallerIdentity(identity)
+	fmt.Println()
+
+	cm := cfn.CFNManager{Session: sess}
+
+	var order int
+	var orders []int
+	for key, _ := range jobMap {
+		orders = append(orders, key)
+	}
+
+	logger.Log.Infof("TOTAL JOB COUNT: %d\n", jobCounts)
+	sort.Ints(orders)
 	//Dispatch Jobs in order
-	for order, jobs := range jobMap {
-		for index, job := range jobs {
-			workChan <- Work{JobName: job.Name, Job: job, LogColor: colors[index], DryRun: dryRunFlag }
+	for _, order = range orders {
+		// for order, jobs := range jobMap {
+		jobs, ok := jobMap[order]
+		if !ok {
+			continue
 		}
 
-		fmt.Printf("[INFO] Dispatched Order: %d, JobCount: %d.\n", order, len(jobs))
+		for _, job := range jobs {
+			workChan <- Work{JobName: job.Name, Job: job, DryRun: dryRunFlag, CfnManager: cm}
+		}
+
+		logger.Log.Infof("Dispatched Order: %d, JobCount: %d.\n", order, len(jobs))
 
 		//wait for jobs for each order to complete
-		for i := 0; i < len(jobs) ; i++ {
-			r := <- resultsChan
+		for i := 0; i < len(jobs); i++ {
+			r := <-resultsChan
 			if r.Error != nil {
 				cancelCtx()
-				fmt.Println("[INFO] Graceful wait for cancelled jobs")
+				logger.Log.Infoln("Graceful wait for cancelled jobs")
 				time.Sleep(time.Second * 10)
-				logger.Errorf("Workflow failed. Reason: %s", r.Error)
+				logger.Log.Errorf("cfn compose failed. Error: %s", r.Error)
 				return
 			}
 		}
-		fmt.Printf("[INFO] All Jobs completed for Run Order: %d\n\n", order)
+		logger.Log.Infof("All Jobs completed for Dispatched Order: %d\n\n", order)
 	}
 
 	cancelCtx()
-	time.Sleep(time.Second*2)
-	logger.ColorPrintf(ctx,"[INFO] Workflow Successfully Completed!!")
+	time.Sleep(time.Second * 2)
+	logger.Log.Infoln("Cfn Compose Successfully Completed!!")
 }
 
-
-func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int){
-	defer func(){
-		fmt.Printf("[DEBUG] Worker: %d exitting...\n", workerId)
+func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {
+	defer func() {
+		logger.Log.Debugf("Worker: %d exiting...\n", workerId)
 	}()
-
-	sess, err := getAWSSession(os.Getenv("AWS_PROFILE"), os.Getenv("AWS_REGION"))
-	if err != nil {
-		fmt.Printf("[ERROR] Error while getting Session: %s\n", err.Error())
-		os.Exit(1)
-	}
-	
-	cm := cfn.CFNManager{ Session: sess}
 
 	for {
 		select {
-			case work := <- workChan:
-				//sleeping from readability
-				time.Sleep(time.Millisecond * 500)
-				name := work.JobName
-				job := work.Job
-				dryRun := work.DryRun
-				jobCtx := context.WithValue(ctx, "logColor", work.LogColor)
+		case work := <-workChan:
+			//sleeping from readability
+			time.Sleep(time.Millisecond * 500)
+			name := work.JobName
+			job := work.Job
+			dryRun := work.DryRun
+			cm := work.CfnManager
+			ctx := context.WithValue(ctx, "job", name)
+			if dryRun {
+				logger.Log.InfoCtxf(ctx, "DryRun started")
+			} else {
+				logger.Log.InfoCtxf(ctx, "Execution started")
+			}
+
+			for _, stack := range job.Stacks {
+				ctx := context.WithValue(ctx, "stack", stack.StackName)
+				var err error
 				if dryRun {
-					logger.ColorPrintf(jobCtx, "[INFO] DryRun started for Job: '%s'\n", name)
-				}else{
-					logger.ColorPrintf(jobCtx, "[INFO] Execution started for Job: '%s'\n", name)
+					err = stack.DryRun(ctx, cm)
+				} else {
+					logger.Log.InfoCtxf(ctx, "Applying Change")
+					err = stack.ApplyChanges(ctx, cm)
 				}
 
-				for _, stack := range job.Stacks {
-					var err error
-					if dryRun {
-						// logger.ColorPrintf(jobCtx,"[INFO] Executing DryRun on Job: '%s', Stack: '%s'\n", name, stack.StackName)
-						err = stack.DryRun(jobCtx, cm)
-					}else{
-						logger.ColorPrintf(jobCtx,"[INFO] Applying Change for Job: '%s', Stack: '%s'\n", name, stack.StackName)
-						err = stack.ApplyChanges(jobCtx, cm)
+				if err != nil {
+					errStr := fmt.Sprintf("[JOB: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
+					logger.Log.Infoln(errStr)
+					resultsChan <- Result{
+						Error:   errors.New(errStr),
+						JobName: name,
 					}
-					if err != nil {
-						// logger.ColorPrintf(jobCtx, "[DEBUG] Job: %s Sending Fail Signal\n", name)
-						errStr := fmt.Sprintf("[ERROR] Failed Job: '%s', Stack '%s', Error: %s\n", name, stack.StackName, err)
-						logger.ColorPrintf(jobCtx, errStr)
-						resultsChan <- Result{
-								Error: errors.New(errStr),
-								JobName: name,
-							}
-						break;
-					}
+					break
 				}
-				// logger.ColorPrintf(jobCtx, "[DEBUG] Sending Success Signal Job: %s\n", name)
-				logger.ColorPrintf(jobCtx, "[INFO] Job: '%s' Completed Successfully!!\n", name)
-				resultsChan <- Result{JobName: name}
+			}
 
-			case <- ctx.Done():
-				// if err := ctx.Err(); err != nil {
-				// 	fmt.Printf("[DEBUG] Cancel signal received Worker: %d, Info: %s\n", workerId, err)
-				// }
-				return
+			if dryRun {
+				logger.Log.InfoCtxf(ctx, "DryRun Completed Successfully!!")
+			} else {
+				logger.Log.InfoCtxf(ctx, "Completed Successfully!!")
+			}
+
+			resultsChan <- Result{JobName: name}
+
+		case <-ctx.Done():
+			if err := ctx.Err(); err != nil {
+				logger.Log.DebugCtxf(ctx, "Cancel signal received Worker: %d, Info: %s\n", workerId, err)
+			}
+			return
 		}
 	}
 }

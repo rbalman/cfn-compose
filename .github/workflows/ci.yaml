@@ -41,8 +41,14 @@ env:
   AWS_RETRY_MODE: standard
 
 jobs:
-  pre-launch:
-    name: 'Pre-Launch Environment: ${{ github.event.inputs.ENV_LABEL }}, Type: ${{ github.event.inputs.ENV_TYPE }}'
+  deploy-staging:
+    name: 'Deploying in Staging Environment: ${ENV_LABEL}, Type: ${ENV_TYPE }'
+    environment:
+      name: staging
+    env:
+      ENV_LABEL: staging
+      ENV_TYPE: nonproduction
+      AWS_REGION: us-west-1
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repo
@@ -53,13 +59,123 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.CENTRAL_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.CENTRAL_AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region:  ${{ env.AWS_REGION }}
           role-to-assume: ${{ env.ROLE_ARN }}
           role-skip-session-tagging: true
           mask-aws-account-id: false
 
       - name: Run cfn-deploy
+        env:
+          DRY_RUN: true
         run: |
           aws s3 cp s3://artifactory-us-east-1-290728412178/drs/cfn-deploy cfn-deploy
           chmod +x ./cfn-deploy
           ./cfn-deploy
+
+      - name: Run cfn-deploy
+        env:
+          DRY_RUN: false
+        run: |
+          aws s3 cp s3://artifactory-us-east-1-290728412178/drs/cfn-deploy cfn-deploy
+          chmod +x ./cfn-deploy
+          ./cfn-deploy
+
+  # manualApproval:
+  #   needs: deploy-staging
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
+  #   steps:
+  #     - uses: trstringer/manual-approval@v1
+  #       with:
+  #         secret: ${{ github.TOKEN }}
+  #         approvers: balmanrawat
+  #         minimum-approvals: 1
+  #         issue-title: "Deploying first version in prod"
+
+  # deploy-uat:
+  #   needs: deploy-staging
+  #   name: 'Deploying in UAT Environment: ${ENV_LABEL}, Type: ${ENV_TYPE }'
+  #   environment:
+  #     name: uat
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     ENV_LABEL: uat
+  #     ENV_TYPE: production
+  #     DRY_RUN: false
+  #   steps:
+  #     - name: Checkout the repo
+  #       uses: actions/checkout@v2
+
+  #     - name: Configure AWS Credentials (nonproduction)
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-access-key-id: ${{ secrets.CENTRAL_AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.CENTRAL_AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: us-east-1
+  #         role-to-assume: ${{ env.ROLE_ARN }}
+  #         role-skip-session-tagging: true
+  #         mask-aws-account-id: false
+
+  #     - name: Run cfn-deploy
+  #       run: |
+  #         aws s3 cp s3://artifactory-us-east-1-290728412178/drs/cfn-deploy cfn-deploy
+  #         chmod +x ./cfn-deploy
+  #         ./cfn-deploy
+
+  # dry-run-production:
+  #   needs: deploy-uat
+  #   name: 'Dry Run in Production Environment: ${ENV_LABEL}, Type: ${ENV_TYPE }'
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     ENV_LABEL: livenv
+  #     ENV_TYPE: production
+  #     DRY_RUN: true
+  #   steps:
+  #     - name: Checkout the repo
+  #       uses: actions/checkout@v2
+
+  #     - name: Configure AWS Credentials (nonproduction)
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-access-key-id: ${{ secrets.CENTRAL_AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.CENTRAL_AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: us-east-1
+  #         role-to-assume: ${{ env.ROLE_ARN }}
+  #         role-skip-session-tagging: true
+  #         mask-aws-account-id: false
+
+  #     - name: Run cfn-deploy
+  #       run: |
+  #         aws s3 cp s3://artifactory-us-east-1-290728412178/drs/cfn-deploy cfn-deploy
+  #         chmod +x ./cfn-deploy
+  #         ./cfn-deploy
+
+  # deploy-production:
+  #   needs: dry-run-production
+  #   name: 'Deploy in Production Environment: ${ENV_LABEL}, Type: ${ENV_TYPE }'
+  #   environment:
+  #     name: production
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     ENV_LABEL: livenv
+  #     ENV_TYPE: production
+  #     DRY_RUN: false
+  #   steps:
+  #     - name: Checkout the repo
+  #       uses: actions/checkout@v2
+
+  #     - name: Configure AWS Credentials (nonproduction)
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-access-key-id: ${{ secrets.CENTRAL_AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.CENTRAL_AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: us-east-1
+  #         role-to-assume: ${{ env.ROLE_ARN }}
+  #         role-skip-session-tagging: true
+  #         mask-aws-account-id: false
+
+  #     - name: Run cfn-deploy
+  #       run: |
+  #         aws s3 cp s3://artifactory-us-east-1-290728412178/drs/cfn-deploy cfn-deploy
+  #         chmod +x ./cfn-deploy
+  #         ./cfn-deploy

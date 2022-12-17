@@ -12,7 +12,6 @@ Resources:
     Type: Custom::NonResource
     Properties:
       One: "key"
-    Condition: Never
 
   # TestSecurityGroup:
   #   Type: AWS::EC2::SecurityGroup

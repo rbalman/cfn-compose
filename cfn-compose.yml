@@ -1,18 +1,21 @@
 ---
 description: Creates stacks for my imaginary service
 vars:
-  ENV_LABEL: bijay
+  ENV_LABEL: shailendra
   ENV_TYPE: nonproduction
   SUB_SYSTEM: iam
   SERVICE_NAME: imaginary-service
-  AWS_PROFILE: sputnik-pre-staging
+  AWS_PROFILE: sputnik-staging
+  AWS_REGION: us-east-1
 jobs:
-  Infra:
+  infra-stack:
     description: "imaginary service job"
     stacks:
       SNSStack:
         template_file: "templates/nop.yml"
         stack_name: "{{ .ENV_LABEL }}-sns-stack"
+      - template_file: "templates/nop.yml"
+        stack_name: "{{ .ENV_LABEL }}-sns-stack0"
         parameters: 
           EnvironmentType: '{{ .ENV_TYPE }}'
           EnvironmentName: '{{ .ENV_LABEL }}'
@@ -25,6 +28,8 @@ jobs:
       SQSStack:
         template_file: "templates/nop.yml"
         stack_name: "{{ .ENV_LABEL }}-sqs-stack"
+      - template_file: "templates/nop.yml"
+        stack_name: "{{ .ENV_LABEL }}-sns-stack1"
         capabilities:
           - CAPABILITY_IAM
           - CAPABILITY_NAMED_IAM
@@ -83,11 +88,71 @@ jobs:
       SNSStack:
         template_file: "templates/nop.yml"
         stack_name: "{{ .ENV_LABEL }}-sqs-consumer"
+    description: "imaginary service job"
+    stacks:
+      - template_file: "templates/nop.yml"
+        stack_name: "{{ .ENV_LABEL }}-oauth2-service0"
+        capabilities:
+          - CAPABILITY_IAM
+          - CAPABILITY_NAMED_IAM
+        parameters:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+
+      - template_file: "templates/nop.yml"
+        stack_name: "{{ .ENV_LABEL }}-oauth2-service1"
+        capabilities:
+          - CAPABILITY_IAM
+          - CAPABILITY_NAMED_IAM
+        parameters:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+
+      - template_file: "templates/nop.yml"
+        stack_name: "{{ .ENV_LABEL }}-oauth2-service2"
+        capabilities:
+          - CAPABILITY_IAM
+          - CAPABILITY_NAMED_IAM
+        parameters:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+
+  Lambdas1:
+    order: 1
+    description: "imaginary service job"
+    stacks:
+      - template_file: "templates/nop.yml"
+        stack_name: "{{ .ENV_LABEL }}-sqs-consumer0"
         parameters: 
           EnvironmentType: '{{ .ENV_TYPE }}'
           EnvironmentName: '{{ .ENV_LABEL }}'
         tags:
           EnvironmentType: '{{ .ENV_TYPE }}'
           EnvironmentName: '{{ .ENV_LABEL }}'
-        # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
-        # timeout: 10
+
+      - template_file: "templates/nop.yml"
+        stack_name: "{{ .ENV_LABEL }}-sqs-consumer1"
+        parameters: 
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+
+      - template_file: "templates/nop.yml"
+        stack_name: "{{ .ENV_LABEL }}-sqs-consumer2"
+        parameters: 
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'

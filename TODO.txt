@@ -1,29 +1,40 @@
-ApplicationBehavior:
-  - Jobs without order being defined are considered to be zero ordered
-  - Jobs should honor the order they are in, only jobs that are in same order can be executed concurrently at a given time
-  - When One job fails, all other running jobs should be cancelled within the grace period
+Sanity Check for Jobs
+- when no order is given at all(good)
+- when no order is given at all(good)
+- when we mix order and no order(good)
+- when we reach max jobs or more than max(good)
+- when no jobs is provided(good)
 
-Cases To be Tested:
-  - when only single job
-  - when two or more than two jobs
-  - when one of stack fails
-  - change the order of the job to 0, 1, 2
-  - when multiple failures are seen in different jobs
-  - log readability
+Sanity Check for Stacks
+- when stack_template file or url is missing(good)
+- when both stack_template and url is provided(good)
+- when no stack is given per jobs(good)
+- strict sequencing of stacks creation(good)
 
-Done
-  - strict ordering of stacks in a job
-  - dry-run
-  - environment variable support
-  - logging mgmt
+Sanity check for workflow
+- when environment variable like aws-profile/region, env_type, env_label missing(good)
+- Invalid workflow file/format(good)
+- Workflow file missing or WORKFLOW variable's invalid value(good)
+- when vars section is not provided, also test if null or non existent vars are referenced(good)
+- when vars are declared but value is not provided(needs Enhancements)
 
-Features
-  - cli wrapper
-  - retry mechanism
-  - proper timeout
+Sanity check for features:
+  - retry mechanism(needs time to test)
+  - aws cli wrapper(not available at the moment)
+  - Is logging reliable or not and shows logs as per the sequence
+    - log levels working or not
+    - is every log comprehensive enough to get insight out it
+    - all logs should tie with job and stack if relevant 
+  - dry-run/non-dry run mode(good)
+  - detects change-sets or not(good)
 
-
-CodeEnhancements:
-  - job dispatch mechanism
-  - variable naming convention
-  - aws session
+Enhancements
+  - pass the concurrency flag
+  - Support Retry Count
+  - set Current Working directory
+  - targeting specific jobs or stack
+  - centralized tagging/parameters
+  - think of handling the empty template variable case
+  - think of handling where var is declared but empty
+  - Addition of removable features
+  - Thinking of multiple stages
