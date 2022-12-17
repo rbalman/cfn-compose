@@ -4,6 +4,7 @@ import (
 	"github.com/balmanrawat/cfn-compose/cfn"
 	"github.com/balmanrawat/cfn-compose/logger"
 	"github.com/balmanrawat/cfn-compose/libs"
+	"github.com/balmanrawat/cfn-compose/config"
 	"context"
 	"errors"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 
 type Work struct {
 	JobName    string
-	Job        Job
+	Job        config.Job
 	DryRun     bool
 	CfnManager cfn.CFNManager
 }
@@ -26,55 +27,40 @@ type Result struct {
 	Error   error
 }
 
-func Composer(configFile string, dryRun bool) {
+func Apply(cc config.ComposeConfig, logLevel int32, dryRun bool) {
 	ctx := context.Background()
 	ctx, cancelCtx := context.WithCancel(ctx)
 	// defer cancelCtx()
 
-	logger.Start(logger.INFO)
+	logger.Start(logLevel)
 
-	wf, err := Parse(configFile)
-	if err != nil {
-		logger.Log.Errorf("Failed while fetching compose file: %s\n", err.Error())
-		os.Exit(1)
-	}
-
-	err = wf.Validate()
-	if err != nil {
-		logger.Log.Errorf("Failed while validating compose file: %s\n", err.Error())
-		os.Exit(1)
-	}
-
-	//MAP
-	// key(order) value Job Array
-	//
-	//Re-arrange jobs to ordered maps
-	jobMap := make(map[int][]Job)
-	for name, job := range wf.Jobs {
+	jobMap := make(map[int][]config.Job)
+	for name, job := range cc.Jobs {
 		job.Name = name
 		jobs, ok := jobMap[job.Order]
 		if ok {
 			jobs = append(jobs, job)
 			jobMap[job.Order] = jobs
 		} else {
-			jobMap[job.Order] = []Job{job}
+			jobMap[job.Order] = []config.Job{job}
 		}
 	}
 
 	workChan := make(chan Work)
 	resultsChan := make(chan Result)
+
 	//Generate the worker pool as pre the job counts
-	jobCounts := len(wf.Jobs)
+	jobCounts := len(cc.Jobs)
 	for i := 0; i < jobCounts; i++ {
 		go ExecuteJob(ctx, workChan, resultsChan, i)
 	}
 
 	// Exporting AWS_PROFILE and AWS_REGION for aws sdk client
-	if val, ok := wf.Vars["AWS_PROFILE"]; ok {
+	if val, ok := cc.Vars["AWS_PROFILE"]; ok {
 		os.Setenv("AWS_PROFILE", val)
 	}
 
-	if val, ok := wf.Vars["AWS_REGION"]; ok {
+	if val, ok := cc.Vars["AWS_REGION"]; ok {
 		os.Setenv("AWS_REGION", val)
 	}
 
@@ -83,18 +69,6 @@ func Composer(configFile string, dryRun bool) {
 		logger.Log.Errorf("Failed while creating AWS Session: %s\n", err.Error())
 		os.Exit(1)
 	}
-
-	identity, err := libs.GetCallerIdentity(sess)
-	if err != nil {
-		logger.Log.Errorf("Failed to get AWS caller identity: %s\n", err.Error())
-		os.Exit(1)
-	}
-
-	fmt.Println("##############################")
-	fmt.Println("# Supplied AWS Configuration #")
-	fmt.Println("##############################")
-	libs.PrintCallerIdentity(identity)
-	fmt.Println()
 
 	cm := cfn.CFNManager{Session: sess}
 

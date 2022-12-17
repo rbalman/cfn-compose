@@ -1,8 +1,9 @@
-package compose
+package config
 
 import (
 	"fmt"
 	"testing"
+	"github.com/balmanrawat/cfn-compose/cfn"
 )
 
 func TestValidateComposeConfig(t *testing.T) {
@@ -40,14 +41,14 @@ func TestValidateComposeConfig(t *testing.T) {
 			Jobs: map[string]Job{
 				"job1": Job{
 					Order: -1,
-					Stacks: []Stack{
-						Stack{},
+					Stacks: []cfn.Stack{
+						cfn.Stack{},
 					},
 				},
 				"job2": Job{
 					Order: 1,
-					Stacks: []Stack{
-						Stack{},
+					Stacks: []cfn.Stack{
+						cfn.Stack{},
 					},
 				},
 			},
@@ -65,14 +66,14 @@ func TestValidateComposeConfig(t *testing.T) {
 			Jobs: map[string]Job{
 				"job1": Job{
 					Order: 101,
-					Stacks: []Stack{
-						Stack{},
+					Stacks: []cfn.Stack{
+						cfn.Stack{},
 					},
 				},
 				"job2": Job{
 					Order: 1,
-					Stacks: []Stack{
-						Stack{},
+					Stacks: []cfn.Stack{
+						cfn.Stack{},
 					},
 				},
 			},
@@ -89,9 +90,9 @@ func TestValidateComposeConfig(t *testing.T) {
 		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: []Stack{
-						Stack{},
-						Stack{},
+					Stacks: []cfn.Stack{
+						cfn.Stack{},
+						cfn.Stack{},
 					},
 				},
 				"job2": Job{},
@@ -110,43 +111,43 @@ func TestValidateComposeConfig(t *testing.T) {
 		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: []Stack{
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
-						Stack{},
+					Stacks: []cfn.Stack{
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
+						cfn.Stack{},
 					},
 				},
 				"job2": Job{},
@@ -165,13 +166,13 @@ func TestValidateComposeConfig(t *testing.T) {
 		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: []Stack{
-						Stack{},
+					Stacks: []cfn.Stack{
+						cfn.Stack{},
 					},
 				},
 				"job2": Job{
-					Stacks: []Stack{
-						Stack{},
+					Stacks: []cfn.Stack{
+						cfn.Stack{},
 					},
 				},
 			},
@@ -188,8 +189,8 @@ func TestValidateComposeConfig(t *testing.T) {
 		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: []Stack{
-						Stack{
+					Stacks: []cfn.Stack{
+						cfn.Stack{
 							StackName: "s1-stack",
 						},
 					},
@@ -209,8 +210,8 @@ func TestValidateComposeConfig(t *testing.T) {
 		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: []Stack{
-						Stack{
+					Stacks: []cfn.Stack{
+						cfn.Stack{
 							StackName:    "s1-stack",
 							TemplateFile: "/Users/mockuser/cfn-templates/template.yaml",
 							TemplateURL:  "https://artifactory.amazonaws.com/cfn-templates/template.yaml",
@@ -231,8 +232,8 @@ func TestValidateComposeConfig(t *testing.T) {
 		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: []Stack{
-						Stack{
+					Stacks: []cfn.Stack{
+						cfn.Stack{
 							StackName:   "s1-stack",
 							TemplateURL: "https://artifactory.amazonaws.com/cfn-templates/template.yaml",
 						},
@@ -252,8 +253,8 @@ func TestValidateComposeConfig(t *testing.T) {
 		cc := ComposeConfig{
 			Jobs: map[string]Job{
 				"job1": Job{
-					Stacks: []Stack{
-						Stack{
+					Stacks: []cfn.Stack{
+						cfn.Stack{
 							StackName:    "s1-stack",
 							TemplateFile: "/Users/mockuser/cfn-templates/template.yaml",
 						},

@@ -7,6 +7,7 @@ import (
 )
 
 var configFile string
+var logLevel string
 
 var rootCmd = &cobra.Command{
 	Use:   "cfnc",
@@ -16,9 +17,11 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) { },
 }
 
+
 func init() {
 	//persistent flags
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "cfn-compose.yml", "config file (default is cfn-compose.yml)")
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "loglevel", "l", "INFO", "valid values are: DEBUG, INFO, WARN, ERROR (defaults to INFO)")
 	// viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
 	// viper.SetDefault("config", "./cfn-compose.yml")
 

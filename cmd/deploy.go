@@ -2,9 +2,12 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/balmanrawat/cfn-compose/config"
 	"github.com/balmanrawat/cfn-compose/compose"
+	"github.com/balmanrawat/cfn-compose/libs"
 	"path/filepath"
 	"os"
+	"fmt"
 )
 
 var dryRun bool
@@ -19,6 +22,26 @@ var deployCmd = &cobra.Command{
 		file := filepath.Base(configFile)
 		os.Chdir(dir)
 
-		compose.Composer(file, dryRun)
+		ll := libs.GetLogLevel(logLevel)
+
+		fmt.Println("##########################")
+		fmt.Println("# Supplied Configuration #")
+		fmt.Println("##########################")
+		fmt.Printf("Config: %s\n", file)
+		fmt.Printf("DryRun: %t\n\n", dryRun)
+
+		config, err := config.Parse(file)
+		if err != nil {
+			fmt.Printf("Failed while fetching compose file: %s\n", err.Error())
+			os.Exit(1)
+		}
+
+		err = config.Validate()
+		if err != nil {
+			fmt.Printf("Failed while validating compose file: %s\n", err.Error())
+			os.Exit(1)
+		}
+
+		compose.Apply(config, ll, dryRun)
 	},
 }
