@@ -27,10 +27,10 @@ type Result struct {
 	Error   error
 }
 
-func Apply(cc config.ComposeConfig, logLevel int32, dryRun bool) {
+func Deploy(cc config.ComposeConfig, logLevel int32, dryRun bool) {
 	ctx := context.Background()
 	ctx, cancelCtx := context.WithCancel(ctx)
-	// defer cancelCtx()
+	defer cancelCtx()
 
 	logger.Start(logLevel)
 
@@ -82,7 +82,6 @@ func Apply(cc config.ComposeConfig, logLevel int32, dryRun bool) {
 	sort.Ints(orders)
 	//Dispatch Jobs in order
 	for _, order = range orders {
-		// for order, jobs := range jobMap {
 		jobs, ok := jobMap[order]
 		if !ok {
 			continue
@@ -94,7 +93,7 @@ func Apply(cc config.ComposeConfig, logLevel int32, dryRun bool) {
 
 		logger.Log.Infof("Dispatched Order: %d, JobCount: %d.\n", order, len(jobs))
 
-		//wait for jobs for each order to complete
+		//wait for jobs in each order to complete
 		for i := 0; i < len(jobs); i++ {
 			r := <-resultsChan
 			if r.Error != nil {
@@ -108,7 +107,6 @@ func Apply(cc config.ComposeConfig, logLevel int32, dryRun bool) {
 		logger.Log.Infof("All Jobs completed for Dispatched Order: %d\n\n", order)
 	}
 
-	cancelCtx()
 	time.Sleep(time.Second * 2)
 	logger.Log.Infoln("Cfn Compose Successfully Completed!!")
 }
