@@ -19,6 +19,7 @@ type Work struct {
 	JobName    string
 	Job        config.Job
 	DryRun     bool
+	DeployMode bool
 	CfnManager cfn.CFNManager
 }
 
@@ -27,7 +28,7 @@ type Result struct {
 	Error   error
 }
 
-func Deploy(cc config.ComposeConfig, logLevel int32, dryRun bool) {
+func Apply(cc config.ComposeConfig, logLevel int32, deployMode bool, dryRun bool) {
 	ctx := context.Background()
 	ctx, cancelCtx := context.WithCancel(ctx)
 	defer cancelCtx()
@@ -55,7 +56,7 @@ func Deploy(cc config.ComposeConfig, logLevel int32, dryRun bool) {
 		go ExecuteJob(ctx, workChan, resultsChan, i)
 	}
 
-	// Exporting AWS_PROFILE and AWS_REGION for aws sdk client
+	// Exporting AWS_PROFILE and AWS_REGION got from config
 	if val, ok := cc.Vars["AWS_PROFILE"]; ok {
 		os.Setenv("AWS_PROFILE", val)
 	}
@@ -79,7 +80,13 @@ func Deploy(cc config.ComposeConfig, logLevel int32, dryRun bool) {
 	}
 
 	logger.Log.Infof("TOTAL JOB COUNT: %d\n", jobCounts)
-	sort.Ints(orders)
+
+	if deployMode {
+		sort.Ints(orders)
+	}else{
+		sort.Sort(sort.Reverse(sort.IntSlice(orders))) //execute jobs in reverse order for delete
+	}
+
 	//Dispatch Jobs in order
 	for _, order = range orders {
 		jobs, ok := jobMap[order]
@@ -88,7 +95,7 @@ func Deploy(cc config.ComposeConfig, logLevel int32, dryRun bool) {
 		}
 
 		for _, job := range jobs {
-			workChan <- Work{JobName: job.Name, Job: job, DryRun: dryRun, CfnManager: cm}
+			workChan <- Work{JobName: job.Name, Job: job, DryRun: dryRun, DeployMode: deployMode, CfnManager: cm}
 		}
 
 		logger.Log.Infof("Dispatched Order: %d, JobCount: %d.\n", order, len(jobs))
@@ -100,7 +107,7 @@ func Deploy(cc config.ComposeConfig, logLevel int32, dryRun bool) {
 				cancelCtx()
 				logger.Log.Infoln("Graceful wait for cancelled jobs")
 				time.Sleep(time.Second * 10)
-				logger.Log.Errorf("cfn compose failed. Error: %s", r.Error)
+				logger.Log.Errorf("CFN compose failed. Error: %s", r.Error)
 				return
 			}
 		}
@@ -108,7 +115,7 @@ func Deploy(cc config.ComposeConfig, logLevel int32, dryRun bool) {
 	}
 
 	time.Sleep(time.Second * 2)
-	logger.Log.Infoln("Cfn Compose Successfully Completed!!")
+	logger.Log.Infoln("CFN Compose Successfully Completed!!")
 }
 
 func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {
@@ -124,39 +131,54 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 			name := work.JobName
 			job := work.Job
 			dryRun := work.DryRun
+			deployMode := work.DeployMode
 			cm := work.CfnManager
 			ctx := context.WithValue(ctx, "job", name)
-			if dryRun {
-				logger.Log.InfoCtxf(ctx, "DryRun started")
-			} else {
-				logger.Log.InfoCtxf(ctx, "Execution started")
-			}
 
-			for _, stack := range job.Stacks {
-				ctx := context.WithValue(ctx, "stack", stack.StackName)
-				var err error
-				if dryRun {
-					err = stack.DryRun(ctx, cm)
-				} else {
-					logger.Log.InfoCtxf(ctx, "Applying Change")
-					err = stack.ApplyChanges(ctx, cm)
-				}
-
-				if err != nil {
-					errStr := fmt.Sprintf("[JOB: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
-					logger.Log.Infoln(errStr)
-					resultsChan <- Result{
-						Error:   errors.New(errStr),
-						JobName: name,
+			if deployMode {
+				for i:= 0 ;i < len(job.Stacks); i++{
+					stack := job.Stacks[i]
+					ctx := context.WithValue(ctx, "stack", stack.StackName)
+					var err error
+					if dryRun {
+						err = stack.ApplyDryRun(ctx, cm)
+					} else {
+						logger.Log.InfoCtxf(ctx, "Applying Change...")
+						err = stack.ApplyChanges(ctx, cm)
 					}
-					break
+	
+					if err != nil {
+						errStr := fmt.Sprintf("[JOB: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
+						logger.Log.Infoln(errStr)
+						resultsChan <- Result{
+							Error:   errors.New(errStr),
+							JobName: name,
+						}
+						break
+					}
 				}
-			}
-
-			if dryRun {
-				logger.Log.InfoCtxf(ctx, "DryRun Completed Successfully!!")
-			} else {
-				logger.Log.InfoCtxf(ctx, "Completed Successfully!!")
+			}else {
+				for i:= len(job.Stacks) - 1; i >= 0; i--{
+					stack := job.Stacks[i]
+					ctx := context.WithValue(ctx, "stack", stack.StackName)
+					var err error
+					if dryRun {
+						err = stack.DestoryDryRun(ctx, cm)
+					} else {
+						logger.Log.InfoCtxf(ctx, "Destroying Stack...")
+						err = stack.Destroy(ctx, cm)
+					}
+	
+					if err != nil {
+						errStr := fmt.Sprintf("[JOB: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
+						logger.Log.Infoln(errStr)
+						resultsChan <- Result{
+							Error:   errors.New(errStr),
+							JobName: name,
+						}
+						break
+					}
+				}
 			}
 
 			resultsChan <- Result{JobName: name}

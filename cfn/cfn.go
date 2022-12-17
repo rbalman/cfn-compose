@@ -33,11 +33,7 @@ func (cm CFNManager) UpdateStack(input *cloudformation.UpdateStackInput) (*cloud
 	return svc.UpdateStack(input)
 }
 
-func (cm CFNManager) DeleteStack(stackName string) (*cloudformation.DeleteStackOutput, error) {
-	input := &cloudformation.DeleteStackInput{
-		StackName: aws.String(stackName),
-	}
-
+func (cm CFNManager) DeleteStack(input *cloudformation.DeleteStackInput) (*cloudformation.DeleteStackOutput, error) {
 	svc := cloudformation.New(cm.Session)
 	return svc.DeleteStack(input)
 }
@@ -102,15 +98,15 @@ func (cm CFNManager) UpdateStackWithWait(ctx context.Context, input *cloudformat
 	return res, nil
 }
 
-func (cm CFNManager) DeleteStackWithWait(ctx context.Context, stackName string) (*cloudformation.DeleteStackOutput, error) {
-	res, err := cm.DeleteStack(stackName)
+func (cm CFNManager) DeleteStackWithWait(ctx context.Context, input *cloudformation.DeleteStackInput) (*cloudformation.DeleteStackOutput, error) {
+	res, err := cm.DeleteStack(input)
 	if err != nil {
 		return nil, err
 	}
 
 	ch := make(chan bool)
 	go libs.Loader(ctx, ch)
-	err = cm.WaitStackDeleteComplete(stackName)
+	err = cm.WaitStackDeleteComplete(*input.StackName)
 	ch <- true
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Wait DeleteStack failed, ERROR: %s", err.Error()))

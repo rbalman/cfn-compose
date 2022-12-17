@@ -1,0 +1,65 @@
+---
+description: Creates stacks for my imaginary service
+vars:
+  ENV_LABEL: shailendra
+  ENV_TYPE: nonproduction
+  SUB_SYSTEM: iam
+  SERVICE_NAME: imaginary-service
+  AWS_PROFILE: sputnik-staging
+  AWS_REGION: us-east-1
+jobs:
+  pre-queues:
+    order: 10
+    description: "imaginary service job"
+    stacks:
+      - template_file: "examples/templates/sqs.yml"
+        stack_name: "{{ .ENV_LABEL }}-sqs-stack1"
+        parameters:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+          DelaySeconds: 5
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
+        # timeout: 10
+      - template_file: "examples/templates/sqs.yml"
+        stack_name: "{{ .ENV_LABEL }}-sqs-stack2"
+        parameters:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+          DelaySeconds: 5
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
+        # timeout: 10
+
+  queues:
+    order: 10
+    description: "queues"
+    stacks:
+      - template_file: "examples/templates/sqs.yml"
+        stack_name: "{{ .ENV_LABEL }}-sqs-stack4"
+        parameters:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+          DelaySeconds: 52
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
+        # timeout: 10
+      - template_file: "examples/templates/sqs.yml"
+        stack_name: "{{ .ENV_LABEL }}-sqs-stack5"
+        parameters:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+          DelaySeconds: 54
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
+        # timeout: 10
+
+  

@@ -8,27 +8,23 @@ import (
 
 var configFile string
 var logLevel string
+var dryRun bool
 
 var rootCmd = &cobra.Command{
 	Use:   "cfnc",
 	Version: "0.0.1",
-	Short: "orchestrate CloudFormation stacks with ease",
-	Long: `Create, Update, Delete multiple cloudformation with super ease.`,
-	Run: func(cmd *cobra.Command, args []string) { },
+	Short: "declarative way of managing CloudFormation Stacks at scale",
+	Long: `Manage CloudFormation stacks at scale. Orchestrate the CloudFormation stacks just by specifying the human readable configuration. Right now yml is the only supports format`,
 }
 
-
 func init() {
-	//persistent flags
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "cfn-compose.yml", "config file (default is cfn-compose.yml)")
-	rootCmd.PersistentFlags().StringVarP(&logLevel, "loglevel", "l", "INFO", "valid values are: DEBUG, INFO, WARN, ERROR (defaults to INFO)")
-	// viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
-	// viper.SetDefault("config", "./cfn-compose.yml")
-
-	//local flags
-	deployCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "execute command in dry run mode")
+	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "cfn-compose.yml", "file path to compose file")
+	rootCmd.PersistentFlags().StringVarP(&logLevel, "loglevel", "l", "INFO", "Specify Log Levels. Valid Levels are: DEBUG, INFO, WARN, ERROR")
+	rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "execute command in dry run mode")
 
 	rootCmd.AddCommand(deployCmd)
+	rootCmd.AddCommand(destroyCmd)
+	rootCmd.AddCommand(validateCmd)
 }
 
 func Execute() {

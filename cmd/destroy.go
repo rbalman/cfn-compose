@@ -10,11 +10,11 @@ import (
 	"fmt"
 )
 
-var deployCmd = &cobra.Command{
-	Use:   "deploy",
-	Short: "deploys the stacks that are part of the compose file",
-	Aliases: []string{"dp"},
-	Long:  `deploy respects the order specified in the compose file and applies the changes accordingly in the individual CFN stacks. Behind the scene it creates the stack if not created and updates the stack if it already exists. Supports dryRun mode, use --dry-run or -d flag.`,
+var destroyCmd = &cobra.Command{
+	Use:   "destroy",
+	Short: "destroys all the stacks which are part of the compose file",
+	Aliases: []string{"ds"},
+	Long:  `destroy respects the order specified in the compose file and applies the changes accordingly for the individual CFN stacks. It just does the reverse thing deploy sub-command does. Supports dryRun mode, use --dry-run or -d flag.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dir := filepath.Dir(configFile)
 		file := filepath.Base(configFile)
@@ -40,6 +40,6 @@ var deployCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		compose.Apply(config, ll, true, dryRun)
+		compose.Apply(config, ll, false, dryRun)
 	},
 }

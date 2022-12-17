@@ -160,6 +160,12 @@ func (s *Stack) updateStackInput() (cloudformation.UpdateStackInput, error) {
 	return input, nil
 }
 
+func (s *Stack) deleteStackInput() (cloudformation.DeleteStackInput, error) {
+	return cloudformation.DeleteStackInput{
+		StackName: &s.StackName,
+	}, nil
+}
+
 ///TODO Make Create Changeset Input Method DRY
 func (s *Stack) createChangeSetInput(ctx context.Context) (cloudformation.CreateChangeSetInput, error) {
 	var capabilities []*string
@@ -274,13 +280,13 @@ func (s *Stack) ApplyChanges(ctx context.Context, cm CFNManager) error {
 		}
 
 	default:
-		return errors.New(fmt.Sprintf("Stopping... the launch as the stack:%s status is in %s state\n", s.StackName, status))
+		return errors.New(fmt.Sprintf("Stopping... the launch as the stack: %s status is: %s\n", s.StackName, status))
 	}
 
 	return nil
 }
 
-func (s *Stack) DryRun(ctx context.Context, cm CFNManager) error {
+func (s *Stack) Destroy(ctx context.Context, cm CFNManager) error {
 	status, err := s.status(ctx, cm)
 	if err != nil {
 		return err
@@ -288,7 +294,37 @@ func (s *Stack) DryRun(ctx context.Context, cm CFNManager) error {
 
 	switch status {
 	case "DELETE_COMPLETE", "DOESN'T EXIST":
-		logger.Log.InfoCtxf(ctx, "Status: '%s'. Will be created.\n", status)
+		logger.Log.InfoCtxf(ctx, "Skipping delete... as the stack is in %s state.\n", status)
+		return nil
+
+	case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_FAILED", "UPDATE_COMPLETE", "CREATE_COMPLETE", "ROLLBACK_COMPLETE":
+		logger.Log.InfoCtxf(ctx, "Deleting Stack... as the stack is in %s state.\n", status)
+		i, err := s.deleteStackInput()
+		if err != nil {
+			return err
+		}
+		_, err = cm.DeleteStackWithWait(ctx, &i)
+		if err != nil {
+			return err
+		}
+
+	default:
+		return errors.New(fmt.Sprintf("Stopping... the deletion as the stack: %s status is: %s\n", s.StackName, status))
+	}
+
+	return nil
+}
+
+
+func (s *Stack) ApplyDryRun(ctx context.Context, cm CFNManager) error {
+	status, err := s.status(ctx, cm)
+	if err != nil {
+		return err
+	}
+
+	switch status {
+	case "DELETE_COMPLETE", "DOESN'T EXIST":
+		logger.Log.InfoCtxf(ctx, "Stack Status: '%s'. Will be created.\n", status)
 
 	case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "CREATE_COMPLETE":
 		// logger.ColorPrintf(ctx,"[DEBUG] Creating Changeset... for the stack: %s is at %s state\n", status, s.StackName)
@@ -300,7 +336,7 @@ func (s *Stack) DryRun(ctx context.Context, cm CFNManager) error {
 		cs, err := cm.CreateChangeSetWithWait(ctx, &i)
 		if err != nil {
 			if strings.Contains(err.Error(), "ResourceNotReady:") {
-				logger.Log.InfoCtxf(ctx, "Status: '%s'. No change detected.\n", status)
+				logger.Log.InfoCtxf(ctx, "Stack Status: '%s'. No change detected.\n", status)
 				return nil
 			}
 			return err
@@ -308,8 +344,28 @@ func (s *Stack) DryRun(ctx context.Context, cm CFNManager) error {
 
 		link := fmt.Sprintf("https://us-east-1.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/changesets/changes?stackId=%s&changeSetId=%s", "us-east-1", url.QueryEscape(*cs.StackId), url.QueryEscape(*cs.Id))
 
-		logger.Log.InfoCtxf(ctx, "Status: '%s'. Will be updated.\n\tChangeSet Link: %s\n", status, link)
+		logger.Log.InfoCtxf(ctx, "Stack Status: '%s'. Will be updated.\n\tChangeSet Link: %s\n", status, link)
 
+	default:
+		logger.Log.InfoCtxf(ctx, "Can't run the operations as Stack is in %s state.\n", status)
+	}
+
+	return nil
+}
+
+func (s *Stack) DestoryDryRun(ctx context.Context, cm CFNManager) error {
+	status, err := s.status(ctx, cm)
+	if err != nil {
+		return err
+	}
+
+	switch status {
+	case "DELETE_COMPLETE", "DOESN'T EXIST":
+		logger.Log.InfoCtxf(ctx, "Stack Status: '%s'. Delete will be Skipped.\n", status)
+
+	case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "CREATE_COMPLETE", "ROLLBACK_COMPLETE":
+		// logger.ColorPrintf(ctx,"[DEBUG] Creating Changeset... for the stack: %s is at %s state\n", status, s.StackName)
+		logger.Log.InfoCtxf(ctx, "Stack Status: '%s'. Stack will be deleted.\n", status)
 	default:
 		logger.Log.InfoCtxf(ctx, "Can't run the operations as Stack is in %s state.\n", status)
 	}
