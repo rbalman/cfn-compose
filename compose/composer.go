@@ -28,7 +28,7 @@ type Result struct {
 	Error   error
 }
 
-func Apply(cc config.ComposeConfig, logLevel int32, deployMode bool, dryRun bool) {
+func Apply(cc config.ComposeConfig, logLevel int32, cherryPickedJob string, deployMode bool, dryRun bool) {
 	ctx := context.Background()
 	ctx, cancelCtx := context.WithCancel(ctx)
 	defer cancelCtx()
@@ -38,6 +38,12 @@ func Apply(cc config.ComposeConfig, logLevel int32, deployMode bool, dryRun bool
 	jobMap := make(map[int][]config.Job)
 	for name, job := range cc.Jobs {
 		job.Name = name
+
+		//Cherry Picked Mode
+		if job.Name == cherryPickedJob {
+			continue
+		}
+		
 		jobs, ok := jobMap[job.Order]
 		if ok {
 			jobs = append(jobs, job)
@@ -84,7 +90,7 @@ func Apply(cc config.ComposeConfig, logLevel int32, deployMode bool, dryRun bool
 	if deployMode {
 		sort.Ints(orders)
 	}else{
-		sort.Sort(sort.Reverse(sort.IntSlice(orders))) //execute jobs in reverse order for delete
+		sort.Sort(sort.Reverse(sort.IntSlice(orders))) //execute jobs in reverse order for deleteMode
 	}
 
 	//Dispatch Jobs in order

@@ -29,12 +29,18 @@ Sanity check for features:
   - detects change-sets or not(good)
 
 Enhancements
-  - pass the concurrency flag
   - Support Retry Count
-  - set Current Working directory
   - targeting specific jobs or stack
   - centralized tagging/parameters
+  - generate graphs from the config file
+  - set Current Working directory (no need)
+  - pass the concurrency flag (no need)
+
+Vars Section
   - think of handling the empty template variable case
   - think of handling where var is declared but empty
-  - Addition of removable features
   - Thinking of multiple stages
+
+Validations:
+  - stack names
+  - external properties

@@ -40,6 +40,6 @@ var deployCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		compose.Apply(config, ll, true, dryRun)
+		compose.Apply(config, ll, jobName, true, dryRun)
 	},
 }

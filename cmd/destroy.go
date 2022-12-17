@@ -40,6 +40,6 @@ var destroyCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		compose.Apply(config, ll, false, dryRun)
+		compose.Apply(config, ll, jobName, false, dryRun)
 	},
 }
