@@ -1,0 +1,50 @@
+---
+description: Creates stacks for my imaginary service
+vars:
+  ENV_LABEL: shailendra
+  ENV_TYPE: nonproduction
+  SUB_SYSTEM: iam
+  SERVICE_NAME: imaginary-service
+  AWS_PROFILE: sputnik-staging
+  AWS_REGION: us-east-1
+jobs:
+  infra-stack:
+    order: 10
+    description: "imaginary service job"
+    stacks:
+      - template_file: "nop.yml"
+        stack_name: "{{ .ENV_LABEL }}-sns-stack"
+        parameters: 
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
+        # timeout: 10
+
+      - template_file: "nop.yml"
+        stack_name: "{{ .ENV_LABEL }}-sqs-stack"
+        capabilities:
+          - CAPABILITY_IAM
+          - CAPABILITY_NAMED_IAM
+        parameters:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+  services:
+    description: "imaginary service job"
+    stacks:
+      - template_file: "nop.yml"
+        stack_name: "{{ .ENV_LABEL }}-oauth2-service"
+        capabilities:
+          - CAPABILITY_IAM
+          - CAPABILITY_NAMED_IAM
+        parameters:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'
+        tags:
+          EnvironmentType: '{{ .ENV_TYPE }}'
+          EnvironmentName: '{{ .ENV_LABEL }}'

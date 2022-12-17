@@ -1,7 +1,7 @@
 package cfn
 
 import (
-	"cfn-deploy/logger"
+	"github.com/balmanrawat/cfn-compose/logger"
 	"context"
 	"errors"
 	"fmt"

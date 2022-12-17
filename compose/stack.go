@@ -1,8 +1,8 @@
 package compose
 
 import (
-	"cfn-deploy/cfn"
-	"cfn-deploy/logger"
+	"github.com/balmanrawat/cfn-compose/cfn"
+	"github.com/balmanrawat/cfn-compose/logger"
 	"context"
 	"errors"
 	"fmt"

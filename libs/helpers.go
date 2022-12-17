@@ -1,7 +1,7 @@
-package main
+package libs
 
 import (
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
-func getAWSSession() (*session.Session, error) {
+func GetAWSSession() (*session.Session, error) {
 	region := os.Getenv("AWS_REGION")
 	return session.NewSessionWithOptions(session.Options{
 		// Profile: profile,
@@ -24,15 +24,15 @@ func getAWSSession() (*session.Session, error) {
 	})
 }
 
-func getCallerIdentity(sess *session.Session) (*sts.GetCallerIdentityOutput, error) {
+func GetCallerIdentity(sess *session.Session) (*sts.GetCallerIdentityOutput, error) {
 	svc := sts.New(sess)
 	input := &sts.GetCallerIdentityInput{}
 
 	return svc.GetCallerIdentity(input)
 }
 
-func printCallerIdentity(identity *sts.GetCallerIdentityOutput) {
-	log.Printf("Account: %s\n", *identity.Account)
-	log.Printf("Region: %s\n", os.Getenv("AWS_REGION"))
-	log.Printf("User: %s\n", *identity.UserId)
+func PrintCallerIdentity(identity *sts.GetCallerIdentityOutput) {
+	fmt.Printf("Account: %s\n", *identity.Account)
+	fmt.Printf("Region: %s\n", os.Getenv("AWS_REGION"))
+	fmt.Printf("User: %s\n", *identity.UserId)
 }
