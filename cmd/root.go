@@ -27,7 +27,8 @@ func init() {
 
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(destroyCmd)
-	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(configCmd)
+	configCmd.AddCommand(validateCmd)
 }
 
 func Execute() {

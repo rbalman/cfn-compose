@@ -8,6 +8,13 @@ import (
 	"fmt"
 )
 
+var configCmd = &cobra.Command{
+	Use:   "config",
+	Short: "helper functions to work with compose file",
+	Aliases: []string{"c"},
+	Long:  `can be used to validate, generate, read configuration`,
+}
+
 var validateCmd = &cobra.Command{
 	Use:   "validate",
 	Short: "validates the compose file configuration",

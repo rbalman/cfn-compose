@@ -11,12 +11,12 @@ import (
 	"os"
 	"sort"
 	"time"
+	"path/filepath"
 )
 
 // var colors []string = []string{log.Blue, log.Yellow, log.Green, log.Magenta, log.Cyan}
 
 type Work struct {
-	JobName    string
 	Job        config.Job
 	DryRun     bool
 	DeployMode bool
@@ -28,47 +28,85 @@ type Result struct {
 	Error   error
 }
 
-func Apply(cc config.ComposeConfig, logLevel int32, cherryPickedJob string, deployMode bool, dryRun bool) {
+type Composer struct {
+	Config config.ComposeConfig
+	LogLevel string
+	CherryPickedJob string
+	DeployMode bool
+	DryRun bool
+	ConfigFile string
+}
+
+func (c *Composer)Apply() {
 	ctx := context.Background()
 	ctx, cancelCtx := context.WithCancel(ctx)
 	defer cancelCtx()
 
-	logger.Start(logLevel)
+	dir := filepath.Dir(c.ConfigFile)
+	file := filepath.Base(c.ConfigFile)
+	os.Chdir(dir)
 
-	jobMap := make(map[int][]config.Job)
-	for name, job := range cc.Jobs {
+	cc, err := config.Parse(file)
+	if err != nil {
+		fmt.Printf("Failed while fetching compose file: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	err = cc.Validate()
+	if err != nil {
+		fmt.Printf("Failed while validating compose file: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	c.Config = cc
+
+	ll := libs.GetLogLevel(c.LogLevel)
+	logger.Start(ll)
+
+	cherryPickedJobFound := false
+	orderdJobsMap := make(map[int][]config.Job)
+	for name, job := range c.Config.Jobs {
 		job.Name = name
 
 		//Cherry Picked Mode
-		if job.Name == cherryPickedJob {
+		if job.Name != c.CherryPickedJob {
 			continue
 		}
-		
-		jobs, ok := jobMap[job.Order]
+		cherryPickedJobFound = true
+
+		jobs, ok := orderdJobsMap[job.Order]
 		if ok {
 			jobs = append(jobs, job)
-			jobMap[job.Order] = jobs
+			orderdJobsMap[job.Order] = jobs
 		} else {
-			jobMap[job.Order] = []config.Job{job}
+			orderdJobsMap[job.Order] = []config.Job{job}
 		}
+	}
+
+	if c.CherryPickedJob != "" && !cherryPickedJobFound {
+		logger.Log.Infof("Cherry Picked Job %s not found\n", c.CherryPickedJob)
+		os.Exit(1)
 	}
 
 	workChan := make(chan Work)
 	resultsChan := make(chan Result)
 
 	//Generate the worker pool as pre the job counts
-	jobCounts := len(cc.Jobs)
+	jobCounts := len(c.Config.Jobs)
 	for i := 0; i < jobCounts; i++ {
 		go ExecuteJob(ctx, workChan, resultsChan, i)
 	}
+	logger.Log.Infof("TOTAL JOB COUNT: %d\n", jobCounts)
 
-	// Exporting AWS_PROFILE and AWS_REGION got from config
-	if val, ok := cc.Vars["AWS_PROFILE"]; ok {
-		os.Setenv("AWS_PROFILE", val)
+	var orders []int
+	for key, _ := range orderdJobsMap {
+		orders = append(orders, key)
 	}
 
-	if val, ok := cc.Vars["AWS_REGION"]; ok {
-		os.Setenv("AWS_REGION", val)
+	if c.DeployMode {
+		sort.Ints(orders)
+	}else{
+		sort.Sort(sort.Reverse(sort.IntSlice(orders))) //execute jobs in reverse order for deleteMode
 	}
 
 	sess, err := libs.GetAWSSession()
@@ -78,30 +116,15 @@ func Apply(cc config.ComposeConfig, logLevel int32, cherryPickedJob string, depl
 	}
 
 	cm := cfn.CFNManager{Session: sess}
-
-	var order int
-	var orders []int
-	for key, _ := range jobMap {
-		orders = append(orders, key)
-	}
-
-	logger.Log.Infof("TOTAL JOB COUNT: %d\n", jobCounts)
-
-	if deployMode {
-		sort.Ints(orders)
-	}else{
-		sort.Sort(sort.Reverse(sort.IntSlice(orders))) //execute jobs in reverse order for deleteMode
-	}
-
 	//Dispatch Jobs in order
-	for _, order = range orders {
-		jobs, ok := jobMap[order]
+	for _, order := range orders {
+		jobs, ok := orderdJobsMap[order]
 		if !ok {
 			continue
 		}
 
 		for _, job := range jobs {
-			workChan <- Work{JobName: job.Name, Job: job, DryRun: dryRun, DeployMode: deployMode, CfnManager: cm}
+			workChan <- Work{Job: job, DryRun: c.DryRun, DeployMode: c.DeployMode, CfnManager: cm}
 		}
 
 		logger.Log.Infof("Dispatched Order: %d, JobCount: %d.\n", order, len(jobs))
@@ -124,6 +147,19 @@ func Apply(cc config.ComposeConfig, logLevel int32, cherryPickedJob string, depl
 	logger.Log.Infoln("CFN Compose Successfully Completed!!")
 }
 
+func (c *Composer) Print() {
+		fmt.Println("##########################")
+		fmt.Println("# Compose Configuration #")
+		fmt.Println("##########################")
+		fmt.Printf("ConfigFile: %s\n", c.ConfigFile)
+		if c.CherryPickedJob != "" {
+			fmt.Printf("Selected Job: %s\n", c.CherryPickedJob)
+		}
+		fmt.Printf("DryRun: %t\n", c.DryRun)
+		fmt.Printf("LogLevel: %s\n", c.LogLevel)
+		fmt.Printf("DeployMode: %t\n\n", c.DeployMode)
+}
+
 func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {
 	defer func() {
 		logger.Log.Debugf("Worker: %d exiting...\n", workerId)
@@ -134,7 +170,7 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 		case work := <-workChan:
 			//sleeping from readability
 			time.Sleep(time.Millisecond * 500)
-			name := work.JobName
+			name := work.Job.Name
 			job := work.Job
 			dryRun := work.DryRun
 			deployMode := work.DeployMode

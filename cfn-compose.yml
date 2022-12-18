@@ -35,7 +35,7 @@ jobs:
         # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
         # timeout: 10
 
-  queues:
+  Q_ues:
     order: 10
     description: "queues"
     stacks:
@@ -61,5 +61,3 @@ jobs:
           EnvironmentName: '{{ .ENV_LABEL }}'
         # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
         # timeout: 10
-
-  
