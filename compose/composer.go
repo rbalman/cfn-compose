@@ -63,30 +63,7 @@ func (c *Composer)Apply() {
 	ll := libs.GetLogLevel(c.LogLevel)
 	logger.Start(ll)
 
-	cherryPickedJobFound := false
-	orderdJobsMap := make(map[int][]config.Job)
-	for name, job := range c.Config.Jobs {
-		job.Name = name
-
-		//Cherry Picked Mode
-		if job.Name != c.CherryPickedJob {
-			continue
-		}
-		cherryPickedJobFound = true
-
-		jobs, ok := orderdJobsMap[job.Order]
-		if ok {
-			jobs = append(jobs, job)
-			orderdJobsMap[job.Order] = jobs
-		} else {
-			orderdJobsMap[job.Order] = []config.Job{job}
-		}
-	}
-
-	if c.CherryPickedJob != "" && !cherryPickedJobFound {
-		logger.Log.Infof("Cherry Picked Job %s not found\n", c.CherryPickedJob)
-		os.Exit(1)
-	}
+	orderdJobsMap := sortJobs(c.Config.Jobs)
 
 	workChan := make(chan Work)
 	resultsChan := make(chan Result)
@@ -147,17 +124,21 @@ func (c *Composer)Apply() {
 	logger.Log.Infoln("CFN Compose Successfully Completed!!")
 }
 
-func (c *Composer) Print() {
-		fmt.Println("##########################")
-		fmt.Println("# Compose Configuration #")
-		fmt.Println("##########################")
-		fmt.Printf("ConfigFile: %s\n", c.ConfigFile)
-		if c.CherryPickedJob != "" {
-			fmt.Printf("Selected Job: %s\n", c.CherryPickedJob)
+func sortJobs(jobs map[string]config.Job) (map[int][]config.Job) {
+	sortedJobs := make(map[int][]config.Job)
+	for name, job := range jobs {
+		job.Name = name
+
+		jobs, ok := sortedJobs[job.Order]
+		if ok {
+			jobs = append(jobs, job)
+			sortedJobs[job.Order] = jobs
+		} else {
+			sortedJobs[job.Order] = []config.Job{job}
 		}
-		fmt.Printf("DryRun: %t\n", c.DryRun)
-		fmt.Printf("LogLevel: %s\n", c.LogLevel)
-		fmt.Printf("DeployMode: %t\n\n", c.DeployMode)
+	}
+
+	return sortedJobs
 }
 
 func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {
@@ -176,6 +157,7 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 			deployMode := work.DeployMode
 			cm := work.CfnManager
 			ctx := context.WithValue(ctx, "job", name)
+			ctx = context.WithValue(ctx, "order", job.Order)
 
 			if deployMode {
 				for i:= 0 ;i < len(job.Stacks); i++{
@@ -232,4 +214,17 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 			return
 		}
 	}
+}
+
+func (c *Composer) Print() {
+	fmt.Println("##########################")
+	fmt.Println("# Compose Configuration #")
+	fmt.Println("##########################")
+	fmt.Printf("ConfigFile: %s\n", c.ConfigFile)
+	if c.CherryPickedJob != "" {
+		fmt.Printf("Selected Job: %s\n", c.CherryPickedJob)
+	}
+	fmt.Printf("DryRun: %t\n", c.DryRun)
+	fmt.Printf("LogLevel: %s\n", c.LogLevel)
+	fmt.Printf("DeployMode: %t\n\n", c.DeployMode)
 }

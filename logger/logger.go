@@ -153,6 +153,10 @@ func (l Logger) ErrorCtxf(ctx context.Context, format string, params ...interfac
 }
 
 func getContextString(ctx context.Context) (ctxStr string) {
+	if order, ok := ctx.Value("order").(int); ok {
+		ctxStr += fmt.Sprintf("[ORDER: %d] ", order)
+	}
+	
 	if job, ok := ctx.Value("job").(string); ok {
 		ctxStr += fmt.Sprintf("[JOB: %s] ", job)
 	}
