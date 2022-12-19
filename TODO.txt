@@ -20,13 +20,13 @@ Sanity check for workflow
 
 Sanity check for features:
   - retry mechanism(needs time to test)
-  - aws cli wrapper(not available at the moment)
   - Is logging reliable or not and shows logs as per the sequence
     - log levels working or not
     - is every log comprehensive enough to get insight out it
     - all logs should tie with job and stack if relevant 
   - dry-run/non-dry run mode(good)
   - detects change-sets or not(good)
+  - cli wrapper(good)
 
 Enhancements
   - Support Retry Count

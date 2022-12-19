@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"github.com/balmanrawat/cfn-compose/config"
+	"github.com/balmanrawat/cfn-compose/compose"
 	"errors"
 	"fmt"
 )
@@ -31,6 +32,29 @@ var validateCmd = &cobra.Command{
 		}
 		
 		fmt.Printf("All good!!")
+		return nil
+	},
+}
+
+var listCmd = &cobra.Command{
+	Use:   "list",
+	Short: "list all the jobs and stacks",
+	Aliases: []string{"ls"},
+	Long:  `parses the configuration and shows jobs and stacks in defined order`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cc, err := config.GetComposeConfig(configFile)
+		if err != nil {
+			return errors.New(fmt.Sprintf("Failed while fetching compose file: %s\n", err.Error()))
+		}
+
+		err = cc.Validate()
+		if err != nil {
+			return errors.New(fmt.Sprintf("Failed while validating compose file: %s\n", err.Error()))
+		}
+		
+		jobsMap := compose.SortJobs(cc.Jobs)
+		compose.PrintJobsMap(jobsMap)
+
 		return nil
 	},
 }

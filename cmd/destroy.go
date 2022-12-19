@@ -19,7 +19,7 @@ var destroyCmd = &cobra.Command{
 			ConfigFile: configFile,
 		}
 
-		c.Print()
+		c.PrintConfig()
 		c.Apply()
 	},
 }
