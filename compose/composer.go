@@ -11,7 +11,6 @@ import (
 	"os"
 	"sort"
 	"time"
-	"path/filepath"
 )
 
 // var colors []string = []string{log.Blue, log.Yellow, log.Green, log.Magenta, log.Cyan}
@@ -42,48 +41,34 @@ func (c *Composer)Apply() {
 	ctx, cancelCtx := context.WithCancel(ctx)
 	defer cancelCtx()
 
-	dir := filepath.Dir(c.ConfigFile)
-	file := filepath.Base(c.ConfigFile)
-	os.Chdir(dir)
-
-	cc, err := config.Parse(file)
+	cc, err := config.GetComposeConfig(c.ConfigFile)
 	if err != nil {
-		fmt.Printf("Failed while fetching compose file: %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	err = cc.Validate()
 	if err != nil {
-		fmt.Printf("Failed while validating compose file: %s\n", err.Error())
 		os.Exit(1)
 	}
 
 	c.Config = cc
+	logger.StartWithLabel(c.LogLevel)
 
-	ll := libs.GetLogLevel(c.LogLevel)
-	logger.Start(ll)
-
-	orderdJobsMap := sortJobs(c.Config.Jobs)
-
-	workChan := make(chan Work)
-	resultsChan := make(chan Result)
-
-	//Generate the worker pool as pre the job counts
-	jobCounts := len(c.Config.Jobs)
-	for i := 0; i < jobCounts; i++ {
-		go ExecuteJob(ctx, workChan, resultsChan, i)
+	var jobsMap map[int][]config.Job
+	if c.CherryPickedJob != "" {
+		jobsMap = cherryPickJob(c.CherryPickedJob, c.Config.Jobs)
+		if len(jobsMap) == 0 {
+			fmt.Printf("Err: Cannot find the selected job: %s in the config\n", c.CherryPickedJob)
+		}
+	}else{
+		jobsMap = sortJobs(c.Config.Jobs)
 	}
-	logger.Log.Infof("TOTAL JOB COUNT: %d\n", jobCounts)
-
-	var orders []int
-	for key, _ := range orderdJobsMap {
-		orders = append(orders, key)
-	}
-
+	
+	orders := keys(jobsMap)
 	if c.DeployMode {
 		sort.Ints(orders)
 	}else{
-		sort.Sort(sort.Reverse(sort.IntSlice(orders))) //execute jobs in reverse order for deleteMode
+		sort.Sort(sort.Reverse(sort.IntSlice(orders)))
 	}
 
 	sess, err := libs.GetAWSSession()
@@ -93,9 +78,18 @@ func (c *Composer)Apply() {
 	}
 
 	cm := cfn.CFNManager{Session: sess}
+
+	workChan := make(chan Work)
+	resultsChan := make(chan Result)
+	//Generate the worker pool as pre the job counts
+	for i := 0; i < len(c.Config.Jobs); i++ {
+		go ExecuteJob(ctx, workChan, resultsChan, i)
+	}
+	logger.Log.Infof("TOTAL JOB COUNT: %d\n", len(c.Config.Jobs))
+	
 	//Dispatch Jobs in order
 	for _, order := range orders {
-		jobs, ok := orderdJobsMap[order]
+		jobs, ok := jobsMap[order]
 		if !ok {
 			continue
 		}
@@ -139,6 +133,25 @@ func sortJobs(jobs map[string]config.Job) (map[int][]config.Job) {
 	}
 
 	return sortedJobs
+}
+
+func keys(jobMap map[int][]config.Job) []int {
+	var keys []int
+	for key := range jobMap {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func cherryPickJob(jobName string, jobs map[string]config.Job) (map[int][]config.Job) {
+	cherryPickedJob := make(map[int][]config.Job)
+	for name, job := range jobs {
+		if name == jobName {
+			job.Name = name
+			cherryPickedJob[job.Order] = []config.Job{job}
+		}
+	}
+	return cherryPickedJob
 }
 
 func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {

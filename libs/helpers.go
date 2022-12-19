@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/balmanrawat/cfn-compose/logger"
 	"context"
 	"time"
 )
@@ -60,17 +59,3 @@ func Loader(ctx context.Context, ch chan bool) {
 		}
 	}
 }
-
-func GetLogLevel(level string) int32 {
-	switch level {
-	case "DEBUG":
-		return logger.DEBUG
-	case "WARN":
-		return logger.WARN
-	case "ERROR":
-		return logger.ERROR
-	default:
-		return logger.INFO
-	}
-}
-

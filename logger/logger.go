@@ -83,6 +83,24 @@ func Start(logLevel int32) {
 	atomic.StoreInt32(&Log.LogLevel, logLevel)
 }
 
+func GetLogLevel(level string) int32 {
+	switch level {
+	case "DEBUG":
+		return DEBUG
+	case "WARN":
+		return WARN
+	case "ERROR":
+		return ERROR
+	default:
+		return INFO
+	}
+}
+
+func StartWithLabel(level string) {
+	ll := GetLogLevel(level)
+	Start(ll)
+}
+
 // LogLevel returns the configured logging level.
 func LogLevel() int32 {
 	return atomic.LoadInt32(&Log.LogLevel)
@@ -156,7 +174,7 @@ func getContextString(ctx context.Context) (ctxStr string) {
 	if order, ok := ctx.Value("order").(int); ok {
 		ctxStr += fmt.Sprintf("[ORDER: %d] ", order)
 	}
-	
+
 	if job, ok := ctx.Value("job").(string); ok {
 		ctxStr += fmt.Sprintf("[JOB: %s] ", job)
 	}

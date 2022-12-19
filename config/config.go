@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"github.com/balmanrawat/cfn-compose/cfn"
+	"path/filepath"
+	"os"
 )
 
 const composeDir string = ".cfn-compose"
@@ -74,4 +76,18 @@ func (c *ComposeConfig) Validate() error {
 	}
 
 	return nil
+}
+
+func GetComposeConfig(configFile string) (ComposeConfig, error) {
+	var cc ComposeConfig
+	dir := filepath.Dir(configFile)
+	file := filepath.Base(configFile)
+	os.Chdir(dir)
+
+	cc, err := parse(file)
+	if err != nil {
+		fmt.Printf("Failed while fetching compose file: %s\n", err.Error())
+	}
+
+	return cc, err
 }

@@ -14,7 +14,7 @@ import (
 )
 
 //Parsing the configuration file
-func Parse(file string) (ComposeConfig, error) {
+func parse(file string) (ComposeConfig, error) {
 	if _, err := os.Stat(composeDir); errors.Is(err, os.ErrNotExist) {
 		err := os.Mkdir(composeDir, os.ModePerm)
 		if err != nil {
