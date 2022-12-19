@@ -39,8 +39,8 @@ type Stack struct {
 	ParametersFile   string            `yaml:"parameter_file"`
 	Tags             map[string]string `yaml:"tags"`
 	TimeoutInMinutes int64             `yaml:"timeout"`
+	cm CFNManager
 }
-
 /*
 Stack is valid only when it satisfies all the below mentioned conditions:
 - stack_name can't be empty

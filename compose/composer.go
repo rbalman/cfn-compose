@@ -19,7 +19,6 @@ type Work struct {
 	Job        config.Job
 	DryRun     bool
 	DeployMode bool
-	CfnManager cfn.CFNManager
 }
 
 type Result struct {
@@ -59,6 +58,7 @@ func (c *Composer)Apply() {
 		jobsMap = cherryPickJob(c.CherryPickedJob, c.Config.Jobs)
 		if len(jobsMap) == 0 {
 			fmt.Printf("Err: Cannot find the selected job: %s in the config\n", c.CherryPickedJob)
+			os.Exit(1)
 		}
 	}else{
 		jobsMap = sortJobs(c.Config.Jobs)
@@ -70,14 +70,6 @@ func (c *Composer)Apply() {
 	}else{
 		sort.Sort(sort.Reverse(sort.IntSlice(orders)))
 	}
-
-	sess, err := libs.GetAWSSession()
-	if err != nil {
-		logger.Log.Errorf("Failed while creating AWS Session: %s\n", err.Error())
-		os.Exit(1)
-	}
-
-	cm := cfn.CFNManager{Session: sess}
 
 	workChan := make(chan Work)
 	resultsChan := make(chan Result)
@@ -95,7 +87,7 @@ func (c *Composer)Apply() {
 		}
 
 		for _, job := range jobs {
-			workChan <- Work{Job: job, DryRun: c.DryRun, DeployMode: c.DeployMode, CfnManager: cm}
+			workChan <- Work{Job: job, DryRun: c.DryRun, DeployMode: c.DeployMode}
 		}
 
 		logger.Log.Infof("Dispatched Order: %d, JobCount: %d.\n", order, len(jobs))
@@ -106,7 +98,7 @@ func (c *Composer)Apply() {
 			if r.Error != nil {
 				cancelCtx()
 				logger.Log.Infoln("Graceful wait for cancelled jobs")
-				time.Sleep(time.Second * 10)
+				time.Sleep(time.Second * 5)
 				logger.Log.Errorf("CFN compose failed. Error: %s", r.Error)
 				return
 			}
@@ -154,6 +146,17 @@ func cherryPickJob(jobName string, jobs map[string]config.Job) (map[int][]config
 	return cherryPickedJob
 }
 
+func reverse(stacks []cfn.Stack) []cfn.Stack {
+	var rs []cfn.Stack
+	if len(stacks) == 0 {
+		return rs
+	}
+	for i := len(stacks) - 1 ; i >= 0; i-- {
+		rs = append(rs, stacks[i])
+	}
+	return rs
+}
+
 func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {
 	defer func() {
 		logger.Log.Debugf("Worker: %d exiting...\n", workerId)
@@ -168,53 +171,51 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 			job := work.Job
 			dryRun := work.DryRun
 			deployMode := work.DeployMode
-			cm := work.CfnManager
 			ctx := context.WithValue(ctx, "job", name)
 			ctx = context.WithValue(ctx, "order", job.Order)
 
+			sess, err := libs.GetAWSSession()
+			if err != nil {
+				logger.Log.Errorf("Failed while creating AWS Session: %s\n", err.Error())
+				os.Exit(1)
+			}
+			cm := cfn.CFNManager{Session: sess}
+
+			var stacks []cfn.Stack
 			if deployMode {
-				for i:= 0 ;i < len(job.Stacks); i++{
-					stack := job.Stacks[i]
-					ctx := context.WithValue(ctx, "stack", stack.StackName)
-					var err error
-					if dryRun {
+				stacks = job.Stacks
+			}else{
+				stacks = reverse(job.Stacks)
+			}
+
+			for i:= 0 ;i < len(stacks); i++{
+				stack := job.Stacks[i]
+				ctx := context.WithValue(ctx, "stack", stack.StackName)
+				var err error
+				if dryRun {
+					if deployMode{
 						err = stack.ApplyDryRun(ctx, cm)
-					} else {
+					}else{
+						err = stack.DestoryDryRun(ctx, cm)
+					}
+				} else {
+					if deployMode{
 						logger.Log.InfoCtxf(ctx, "Applying Change...")
 						err = stack.ApplyChanges(ctx, cm)
-					}
-	
-					if err != nil {
-						errStr := fmt.Sprintf("[JOB: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
-						logger.Log.Infoln(errStr)
-						resultsChan <- Result{
-							Error:   errors.New(errStr),
-							JobName: name,
-						}
-						break
-					}
-				}
-			}else {
-				for i:= len(job.Stacks) - 1; i >= 0; i--{
-					stack := job.Stacks[i]
-					ctx := context.WithValue(ctx, "stack", stack.StackName)
-					var err error
-					if dryRun {
-						err = stack.DestoryDryRun(ctx, cm)
-					} else {
+					}else{
 						logger.Log.InfoCtxf(ctx, "Destroying Stack...")
 						err = stack.Destroy(ctx, cm)
 					}
-	
-					if err != nil {
-						errStr := fmt.Sprintf("[JOB: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
-						logger.Log.Infoln(errStr)
-						resultsChan <- Result{
-							Error:   errors.New(errStr),
-							JobName: name,
-						}
-						break
+				}
+
+				if err != nil {
+					errStr := fmt.Sprintf("[JOB: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
+					logger.Log.Infoln(errStr)
+					resultsChan <- Result{
+						Error:   errors.New(errStr),
+						JobName: name,
 					}
+					break
 				}
 			}
 

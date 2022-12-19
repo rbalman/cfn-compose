@@ -9,7 +9,7 @@ vars:
   AWS_REGION: us-east-1
 jobs:
   Q_ues:
-    order: 01
+    order: 03
     description: "queues"
     stacks:
       - template_file: "examples/templates/sqs.yml"
@@ -35,7 +35,7 @@ jobs:
         # retry: 10 ## For retries https://stackoverflow.com/questions/69343418/can-we-configure-retry-attempts-on-aws-go-sdk-service-calls
         # timeout: 10
   AnotherQueue:
-    order: 01
+    order: 02
     description: "queues"
     stacks:
       - template_file: "examples/templates/sqs.yml"
