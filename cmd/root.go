@@ -30,6 +30,7 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(validateCmd)
 	configCmd.AddCommand(listCmd)
+	configCmd.AddCommand(generateCmd)
 }
 
 func Execute() {
@@ -38,5 +39,3 @@ func Execute() {
 		os.Exit(1)
 	}
 }
-
-
