@@ -1,6 +1,5 @@
-cfn-compose
 .vscode
 .cfn-compose
 main
-cfn-deploy
 cfn-compose
+coverage
