@@ -61,7 +61,7 @@ func (c *Composer)Apply() {
 			os.Exit(1)
 		}
 	}else{
-		jobsMap = sortJobs(c.Config.Jobs)
+		jobsMap = SortJobs(c.Config.Jobs)
 	}
 	
 	orders := keys(jobsMap)
@@ -110,7 +110,7 @@ func (c *Composer)Apply() {
 	logger.Log.Infoln("CFN Compose Successfully Completed!!")
 }
 
-func sortJobs(jobs map[string]config.Job) (map[int][]config.Job) {
+func SortJobs(jobs map[string]config.Job) (map[int][]config.Job) {
 	sortedJobs := make(map[int][]config.Job)
 	for name, job := range jobs {
 		job.Name = name
@@ -125,6 +125,22 @@ func sortJobs(jobs map[string]config.Job) (map[int][]config.Job) {
 	}
 
 	return sortedJobs
+}
+
+func PrintJobsMap(jobsMap map[int][]config.Job) () {
+	orders := keys(jobsMap)
+	sort.Ints(orders)
+
+	for _, order := range orders {
+		jobs := jobsMap[order]
+		fmt.Printf("ORDER: %d\n", order)
+		for _, job := range jobs {
+			fmt.Printf("  JOB: %s\n", job.Name)
+			for _, stack := range job.Stacks {
+				fmt.Printf("    Stack: %s\n", stack.StackName)
+			}
+		}
+	}
 }
 
 func keys(jobMap map[int][]config.Job) []int {
@@ -230,7 +246,7 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 	}
 }
 
-func (c *Composer) Print() {
+func (c *Composer) PrintConfig() {
 	fmt.Println("##########################")
 	fmt.Println("# Compose Configuration #")
 	fmt.Println("##########################")

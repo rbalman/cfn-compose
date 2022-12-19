@@ -29,6 +29,7 @@ func init() {
 	rootCmd.AddCommand(destroyCmd)
 	rootCmd.AddCommand(configCmd)
 	configCmd.AddCommand(validateCmd)
+	configCmd.AddCommand(listCmd)
 }
 
 func Execute() {
