@@ -11,6 +11,8 @@ By Balman Rawat while working at [CloudFactory](https://www.cloudfactory.com/)
 * Generate/Validate/visualize configuration with ease
 
 ## Background
-As the infrastrucutre evolves and get complicated we need to manage/maintain multiple CloudFormation Stacks. When we want to `create/update/delete` these stacks we need to manually apply the actions one at a time. Deletion mostly in dev/test environment can be hectic as we should delete the stacks in the reverse of creation order. **cfn-compose** helps to manage multiple stacks that are closely related using yaml based declarative configuration.
+As the infrastrucutre evolves and gets complicated we need to manage/maintain multiple CloudFormation Stacks. When we want to `create/update/delete` these stacks we need to manually apply the actions one at a time. Deletion mostly in dev/test environment can be hectic as we should delete the stacks in the reverse of creation order. **cfn-compose** helps to manage multiple stacks that are closely related using declarative language.
 
 ![overview image](./docs/images/cfn-compose.svg)
+
+## Background

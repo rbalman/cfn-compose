@@ -3,20 +3,23 @@ Parameters:
     Type: String
   EnvironmentName:
     Type: String
-Conditions:
-  Never:
-    !Equals [ "A", "C" ]
+  VpcId:
+    Type: String
 
 Resources:
-  NonResource:
-    Type: Custom::NonResource
-    Properties:
-      One: "key"
-    Condition: Never
-
-  TestSecurityGroup:
+  CfnComposeSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Sub "TestSecurityGroup for ${EnvironmentType} of type ${EnvironmentType}"
-      VpcId:
-        Fn::ImportValue: balman:VPC
+      GroupDescription: !Sub "CfnCompose test security group for ${EnvironmentType}"
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: EnvironmentName
+          Value: !Ref EnvironmentName
+        - Key: EnvironmentType
+          Value: !Ref EnvironmentType
+
+Outputs:
+  SecurityGroupId:
+    Value: !Ref CfnComposeSecurityGroup
+    Export:
+      Name: !Sub ${EnvironmentName}:CfnComposeSecurityGroupId

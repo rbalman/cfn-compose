@@ -15,30 +15,17 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 )
 
-// var logger = log.Logger{}
-
 const Regions string = "eu-north-1, ap-south-1, eu-west-3, eu-west-2, eu-west-1, ap-northeast-3,  ap-northeast-2, ap-northeast-1, sa-east-1, ca-central-1, ap-southeast-1, ap-southeast-2, eu-central-1, us-east-1, us-east-2, us-west-1, us-west-2"
 
-// type Stack struct {
-// 	TemplateFile     string            `yaml:"template_file" json:"template_file"`
-// 	TemplateURL      string            `yaml:"template_url" json:"template_url"`
-// 	StackName        string            `yaml:"stack_name" json:"stack_name"`
-// 	Capabilities     []string          `yaml:"capabilities" json:"capabilities"`
-// 	Parameters       map[string]string `yaml:"parameters" json:"parameters"`
-// 	ParametersFile   string            `yaml:"parameter_file" json:"parameter_file"`
-// 	Tags             map[string]string `yaml:"tags" json:"tags"`
-// 	TimeoutInMinutes int64             `yaml:"timeout" json:"timeout"`
-// }
-
 type Stack struct {
-	TemplateFile     string            `yaml:"template_file"`
-	TemplateURL      string            `yaml:"template_url"`
+	TemplateFile     string            `yaml:"template_file,omitempty"`
+	TemplateURL      string            `yaml:"template_url,omitempty"`
 	StackName        string            `yaml:"stack_name"`
-	Capabilities     []string          `yaml:"capabilities"`
-	Parameters       map[string]string `yaml:"parameters"`
-	ParametersFile   string            `yaml:"parameter_file"`
-	Tags             map[string]string `yaml:"tags"`
-	TimeoutInMinutes int64             `yaml:"timeout"`
+	Capabilities     []string          `yaml:"capabilities,omitempty"`
+	Parameters       map[string]string `yaml:"parameters,omitempty"`
+	// ParametersFile   string            `yaml:"parameters_file"`
+	Tags             map[string]string `yaml:"tags,omitempty"`
+	TimeoutInMinutes int64             `yaml:"timeout,omitempty"`
 	cm CFNManager
 }
 /*

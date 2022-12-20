@@ -10,7 +10,7 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When there are no items")
 	{
 		var stacks []cfn.Stack
-		rs := reverse(stacks)
+		rs := reverseStackOrder(stacks)
 		if len(rs) != 0 {
 			t.Fatal(fmt.Sprintf("Expected reverse stack length to be 0 but got %d", len(rs)))
 		}
@@ -19,7 +19,7 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When there are items")
 	{
 		stacks := []cfn.Stack{cfn.Stack{StackName: "first"},cfn.Stack{StackName: "second"}, cfn.Stack{StackName: "third"}}
-		rs := reverse(stacks)
+		rs := reverseStackOrder(stacks)
 		j := 0
 		for i := len(stacks) - 1; i >= 0 ; i-- {
 			sName := stacks[i].StackName

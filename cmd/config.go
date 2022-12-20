@@ -38,10 +38,10 @@ var validateCmd = &cobra.Command{
 	},
 }
 
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "list all the jobs and stacks",
-	Aliases: []string{"ls"},
+var visualizeCmd = &cobra.Command{
+	Use:   "visualize",
+	Short: "visualize jobs and stacks",
+	Aliases: []string{"vz"},
 	Long:  `parses the configuration and shows jobs and stacks in defined order`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cc, err := config.GetComposeConfig(configFile)
@@ -69,43 +69,41 @@ var generateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		sampleConfig := config.ComposeConfig {
 			Description: "Sample CloudFormation Compose file",
-			Vars: map[string]string{"ENV_TYPE": "nonproduction"},
+			Vars: map[string]string{
+				"ENV_NAME": "cfn-compose", 
+				"ENV_TYPE": "nonproduction", 
+				"DelaySeconds": "60",
+				"VPC_ID": "",
+				"SUBNET_ID": "",
+			},
 			Jobs: map[string]config.Job{
-				"DataStore": config.Job{
-					Name: "DataStore",
-					Description: "Creates Database and Security Group",
+				"EC2Instance": config.Job{
+					Description: "Creates EC2 Instance Security Group",
 					Order: 0,
 					Stacks: []cfn.Stack{
 						cfn.Stack{
-							StackName: "sample-database-network",
-							TemplateFile: "path-to-database-network-cfn-template",
-							Parameters: map[string]string{"DatabaseName": "sample-database-network"},
-							Tags: map[string]string{"Name": "sample-database-network"},
+							StackName: "sample-{{ .ENV_NAME }}-security-group",
+							TemplateFile: "sg.yml",
+							Parameters: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}","VpcId": "{{ .VPC_ID }}"},
+							Tags: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}"},
 						},
 						cfn.Stack{
-							StackName: "sample-database-stack",
-							TemplateFile: "path-to-database-cfn-template",
-							Parameters: map[string]string{"DatabaseName": "sample-database"},
-							Tags: map[string]string{"Name": "sample-database"},
+							StackName: "sample-{{ .ENV_NAME }}-ec2-instance",
+							TemplateFile: "ec2.yml",
+							Parameters: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}", "SubnetId": "{{ .SUBNET_ID }}"},
+							Tags: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}"},
 						},
 					},
 				},
-				"LambdaJob": config.Job{
-					Name: "LambdaJob",
-					Description: "Deploy lambda that uses above datastore",
+				"MessageQueue": config.Job{
+					Description: "Deploying Queuing Resources",
 					Order: 1,
 					Stacks: []cfn.Stack{
 						cfn.Stack{
-							StackName: "lambda-sqs-stack",
-							TemplateFile: "path-to-lambda-sqs-template",
-							Parameters: map[string]string{"DelaySeconds": "5"},
-							Tags: map[string]string{"Name": "lamdbda-publisher-sqs"},
-						},
-						cfn.Stack{
-							StackName: "database-consumer-lambda-stack",
-							TemplateFile: "path-to-lambda-cfn-template",
-							Parameters: map[string]string{"LambdaName": "database-consumer-lambda"},
-							Tags: map[string]string{"Name": "database-consumer-lambda"},
+							StackName: "sample-{{ .ENV_NAME }}-sqs",
+							TemplateFile: "sqs.yml",
+							Parameters: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}", "DelaySeconds": "{{ .DelaySeconds }}"},
+							Tags: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}"},
 						},
 					},
 				},
@@ -117,7 +115,7 @@ var generateCmd = &cobra.Command{
 			return errors.New(fmt.Sprintf("Failed to generate sample compose file: %s\n", err.Error()))
 		}
 
-		fmt.Printf("### SAMPLE TEMPLATE ###\n%s", d)
+		fmt.Printf("%s", d)
 
 		return nil
 	},

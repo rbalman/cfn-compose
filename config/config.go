@@ -14,16 +14,16 @@ var jobCountLimit int = 15
 var stackCountLimit int = 30
 
 type ComposeConfig struct {
-	Description string            `yaml:"description"`
-	Jobs        map[string]Job    `yaml:"jobs"`
-	Vars        map[string]string `yaml:"vars"`
+	Description string            `yaml:"Description"`
+	Jobs        map[string]Job    `yaml:"Jobs"`
+	Vars        map[string]string `yaml:"Vars"`
 }
 
 type Job struct {
-	Name        string  `yaml:"name"`
-	Description string  `yaml:"description"`
-	Stacks      []cfn.Stack `yaml:"stacks"`
-	Order       int     `yaml:"order"`
+	Name        string  `yaml:"Name,omitempty"`
+	Description string  `yaml:"Description,omitempty"`
+	Stacks      []cfn.Stack `yaml:"Stacks"`
+	Order       int     `yaml:"Order"`
 }
 
 /*

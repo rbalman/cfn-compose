@@ -42,16 +42,27 @@ func (c *Composer)Apply() {
 
 	cc, err := config.GetComposeConfig(c.ConfigFile)
 	if err != nil {
+		fmt.Printf("Err: Failed to Parse Compose Config: %s\n", err)
 		os.Exit(1)
 	}
 
 	err = cc.Validate()
 	if err != nil {
+		fmt.Printf("Err: Failed While Validating Compose Config: %s\n", err)
 		os.Exit(1)
 	}
 
 	c.Config = cc
 	logger.StartWithLabel(c.LogLevel)
+
+	// Exporting AWS_PROFILE and AWS_REGION got from config
+	if val, ok := cc.Vars["AWS_PROFILE"]; ok {
+		os.Setenv("AWS_PROFILE", val)
+	}
+
+	if val, ok := cc.Vars["AWS_REGION"]; ok {
+		os.Setenv("AWS_REGION", val)
+	}
 
 	var jobsMap map[int][]config.Job
 	if c.CherryPickedJob != "" {
@@ -162,7 +173,7 @@ func cherryPickJob(jobName string, jobs map[string]config.Job) (map[int][]config
 	return cherryPickedJob
 }
 
-func reverse(stacks []cfn.Stack) []cfn.Stack {
+func reverseStackOrder(stacks []cfn.Stack) []cfn.Stack {
 	var rs []cfn.Stack
 	if len(stacks) == 0 {
 		return rs
@@ -201,11 +212,12 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 			if deployMode {
 				stacks = job.Stacks
 			}else{
-				stacks = reverse(job.Stacks)
+				stacks = reverseStackOrder(job.Stacks)
 			}
 
-			for i:= 0 ;i < len(stacks); i++{
-				stack := job.Stacks[i]
+			fmt.Printf("Stacks: %+v\n", stacks)
+
+			for _, stack := range stacks{
 				ctx := context.WithValue(ctx, "stack", stack.StackName)
 				var err error
 				if dryRun {

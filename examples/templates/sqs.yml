@@ -5,14 +5,14 @@ Parameters:
     Type: String
   DelaySeconds:
     Type: Number
-Conditions:
-  Never:
-    !Equals [ "A", "C" ]
-
 Resources:
-  NonResource:
+  CfnComposeQueue:
     Type: AWS::SQS::Queue
     Properties:
       DelaySeconds: !Ref DelaySeconds
-    Condition: Never
+      Tags:
+        - Key: EnvironmentName
+          Value: !Ref EnvironmentName
+        - Key: EnvironmentType
+          Value: !Ref EnvironmentType
 
