@@ -28,7 +28,7 @@ Flows:
       tags:
         EnvironmentName: '{{ .ENV_NAME }}'
         EnvironmentType: '{{ .ENV_TYPE }}'
-    Order: 0
+    Order: 1
   MessageQueue:
     Description: Deploying Queuing Resources
     Stacks:

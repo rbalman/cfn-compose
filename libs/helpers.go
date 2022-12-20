@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
+	"github.com/balmanrawat/cfn-compose/logger"
 	"context"
 	"time"
 )
@@ -51,11 +52,10 @@ func Loader(ctx context.Context, ch chan bool) {
 	for {
 		select {
 		case <-ch:
-			fmt.Printf("\n")
 			return
 		default:
-			time.Sleep(500 * time.Millisecond)
-			fmt.Print(".")
+			time.Sleep(15000 * time.Millisecond)
+			logger.Log.InfoCtxf(ctx, "→ →..")
 		}
 	}
 }

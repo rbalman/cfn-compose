@@ -284,7 +284,7 @@ func (s *Stack) Destroy(ctx context.Context, cm CFNManager) error {
 		logger.Log.InfoCtxf(ctx, "Skipping delete... as the stack is in %s state.\n", status)
 		return nil
 
-	case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_FAILED", "UPDATE_COMPLETE", "CREATE_COMPLETE", "ROLLBACK_COMPLETE":
+	case "CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE",  "UPDATE_ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_FAILED", "ROLLBACK_FAILED", "DELETE_FAILED":
 		logger.Log.InfoCtxf(ctx, "Deleting Stack... as the stack is in %s state.\n", status)
 		i, err := s.deleteStackInput()
 		if err != nil {
@@ -350,7 +350,7 @@ func (s *Stack) DestoryDryRun(ctx context.Context, cm CFNManager) error {
 	case "DELETE_COMPLETE", "DOESN'T EXIST":
 		logger.Log.InfoCtxf(ctx, "Stack Status: '%s'. Delete will be Skipped.\n", status)
 
-	case "UPDATE_FAILED", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_COMPLETE", "CREATE_COMPLETE", "ROLLBACK_COMPLETE":
+	case "CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE",  "UPDATE_ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_FAILED", "ROLLBACK_FAILED", "DELETE_FAILED":
 		// logger.ColorPrintf(ctx,"[DEBUG] Creating Changeset... for the stack: %s is at %s state\n", status, s.StackName)
 		logger.Log.InfoCtxf(ctx, "Stack Status: '%s'. Stack will be deleted.\n", status)
 	default:

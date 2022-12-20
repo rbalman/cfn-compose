@@ -40,9 +40,9 @@ var validateCmd = &cobra.Command{
 
 var visualizeCmd = &cobra.Command{
 	Use:   "visualize",
-	Short: "visualize jobs and stacks",
+	Short: "visualize flows and stacks",
 	Aliases: []string{"vz"},
-	Long:  `parses the configuration and shows jobs and stacks in defined order`,
+	Long:  `parses the configuration and shows flows and stacks in defined order`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cc, err := config.GetComposeConfig(configFile)
 		if err != nil {
@@ -54,8 +54,8 @@ var visualizeCmd = &cobra.Command{
 			return errors.New(fmt.Sprintf("Failed while validating compose file: %s\n", err.Error()))
 		}
 		
-		jobsMap := compose.SortJobs(cc.Jobs)
-		compose.PrintJobsMap(jobsMap)
+		flowsMap := compose.SortFlows(cc.Flows)
+		compose.PrintFlowsMap(flowsMap)
 
 		return nil
 	},
@@ -76,8 +76,8 @@ var generateCmd = &cobra.Command{
 				"VPC_ID": "",
 				"SUBNET_ID": "",
 			},
-			Jobs: map[string]config.Job{
-				"EC2Instance": config.Job{
+			Flows: map[string]config.Flow{
+				"EC2Instance": config.Flow{
 					Description: "Creates EC2 Instance Security Group",
 					Order: 0,
 					Stacks: []cfn.Stack{
@@ -95,7 +95,7 @@ var generateCmd = &cobra.Command{
 						},
 					},
 				},
-				"MessageQueue": config.Job{
+				"MessageQueue": config.Flow{
 					Description: "Deploying Queuing Resources",
 					Order: 1,
 					Stacks: []cfn.Stack{

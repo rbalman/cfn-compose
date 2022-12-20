@@ -16,20 +16,20 @@ import (
 // var colors []string = []string{log.Blue, log.Yellow, log.Green, log.Magenta, log.Cyan}
 
 type Work struct {
-	Job        config.Job
+	Flow        config.Flow
 	DryRun     bool
 	DeployMode bool
 }
 
 type Result struct {
-	JobName string
+	FlowName string
 	Error   error
 }
 
 type Composer struct {
 	Config config.ComposeConfig
 	LogLevel string
-	CherryPickedJob string
+	CherryPickedFlow string
 	DeployMode bool
 	DryRun bool
 	ConfigFile string
@@ -64,18 +64,18 @@ func (c *Composer)Apply() {
 		os.Setenv("AWS_REGION", val)
 	}
 
-	var jobsMap map[int][]config.Job
-	if c.CherryPickedJob != "" {
-		jobsMap = cherryPickJob(c.CherryPickedJob, c.Config.Jobs)
-		if len(jobsMap) == 0 {
-			fmt.Printf("Err: Cannot find the selected job: %s in the config\n", c.CherryPickedJob)
+	var flowsMap map[int][]config.Flow
+	if c.CherryPickedFlow != "" {
+		flowsMap = cherryPickFlow(c.CherryPickedFlow, c.Config.Flows)
+		if len(flowsMap) == 0 {
+			fmt.Printf("Err: Cannot find the selected flow: %s in the config\n", c.CherryPickedFlow)
 			os.Exit(1)
 		}
 	}else{
-		jobsMap = SortJobs(c.Config.Jobs)
+		flowsMap = SortFlows(c.Config.Flows)
 	}
 	
-	orders := keys(jobsMap)
+	orders := keys(flowsMap)
 	if c.DeployMode {
 		sort.Ints(orders)
 	}else{
@@ -84,93 +84,93 @@ func (c *Composer)Apply() {
 
 	workChan := make(chan Work)
 	resultsChan := make(chan Result)
-	//Generate the worker pool as pre the job counts
-	for i := 0; i < len(c.Config.Jobs); i++ {
-		go ExecuteJob(ctx, workChan, resultsChan, i)
+	//Generate the worker pool as pre the flow counts
+	for i := 0; i < len(c.Config.Flows); i++ {
+		go ExecuteFlow(ctx, workChan, resultsChan, i)
 	}
-	logger.Log.Infof("TOTAL JOB COUNT: %d\n", len(c.Config.Jobs))
+	logger.Log.Debugf("TOTAL FLOW COUNT: %d\n", len(c.Config.Flows))
 	
-	//Dispatch Jobs in order
+	//Dispatch Flows in order
 	for _, order := range orders {
-		jobs, ok := jobsMap[order]
+		flows, ok := flowsMap[order]
 		if !ok {
 			continue
 		}
 
-		for _, job := range jobs {
-			workChan <- Work{Job: job, DryRun: c.DryRun, DeployMode: c.DeployMode}
+		for _, flow := range flows {
+			workChan <- Work{Flow: flow, DryRun: c.DryRun, DeployMode: c.DeployMode}
 		}
 
-		logger.Log.Infof("Dispatched Order: %d, JobCount: %d.\n", order, len(jobs))
+		logger.Log.Debugf("Dispatched Order: %d, FlowCount: %d.\n", order, len(flows))
 
-		//wait for jobs in each order to complete
-		for i := 0; i < len(jobs); i++ {
+		//wait for flows in each order to complete
+		for i := 0; i < len(flows); i++ {
 			r := <-resultsChan
 			if r.Error != nil {
 				cancelCtx()
-				logger.Log.Infoln("Graceful wait for cancelled jobs")
+				logger.Log.Debugln("Graceful wait for cancelled flows")
 				time.Sleep(time.Second * 5)
-				logger.Log.Errorf("CFN compose failed. Error: %s", r.Error)
+				logger.Log.Errorf("compose failed with Error: %s", r.Error)
 				return
 			}
 		}
-		logger.Log.Infof("All Jobs completed for Dispatched Order: %d\n\n", order)
+		logger.Log.Infof("All Flows completed for Order: %d\n\n", order)
 	}
 
 	time.Sleep(time.Second * 2)
-	logger.Log.Infoln("CFN Compose Successfully Completed!!")
+	logger.Log.Infoln("Successfully Completed!!")
 }
 
-func SortJobs(jobs map[string]config.Job) (map[int][]config.Job) {
-	sortedJobs := make(map[int][]config.Job)
-	for name, job := range jobs {
-		job.Name = name
+func SortFlows(flows map[string]config.Flow) (map[int][]config.Flow) {
+	sortedFlows := make(map[int][]config.Flow)
+	for name, flow := range flows {
+		flow.Name = name
 
-		jobs, ok := sortedJobs[job.Order]
+		flows, ok := sortedFlows[flow.Order]
 		if ok {
-			jobs = append(jobs, job)
-			sortedJobs[job.Order] = jobs
+			flows = append(flows, flow)
+			sortedFlows[flow.Order] = flows
 		} else {
-			sortedJobs[job.Order] = []config.Job{job}
+			sortedFlows[flow.Order] = []config.Flow{flow}
 		}
 	}
 
-	return sortedJobs
+	return sortedFlows
 }
 
-func PrintJobsMap(jobsMap map[int][]config.Job) () {
-	orders := keys(jobsMap)
+func PrintFlowsMap(flowsMap map[int][]config.Flow) () {
+	orders := keys(flowsMap)
 	sort.Ints(orders)
 
 	for _, order := range orders {
-		jobs := jobsMap[order]
+		flows := flowsMap[order]
 		fmt.Printf("ORDER: %d\n", order)
-		for _, job := range jobs {
-			fmt.Printf("  JOB: %s\n", job.Name)
-			for _, stack := range job.Stacks {
+		for _, flow := range flows {
+			fmt.Printf("  FLOW: %s\n", flow.Name)
+			for _, stack := range flow.Stacks {
 				fmt.Printf("    Stack: %s\n", stack.StackName)
 			}
 		}
 	}
 }
 
-func keys(jobMap map[int][]config.Job) []int {
+func keys(flowMap map[int][]config.Flow) []int {
 	var keys []int
-	for key := range jobMap {
+	for key := range flowMap {
 		keys = append(keys, key)
 	}
 	return keys
 }
 
-func cherryPickJob(jobName string, jobs map[string]config.Job) (map[int][]config.Job) {
-	cherryPickedJob := make(map[int][]config.Job)
-	for name, job := range jobs {
-		if name == jobName {
-			job.Name = name
-			cherryPickedJob[job.Order] = []config.Job{job}
+func cherryPickFlow(flowName string, flows map[string]config.Flow) (map[int][]config.Flow) {
+	cherryPickedFlow := make(map[int][]config.Flow)
+	for name, flow := range flows {
+		if name == flowName {
+			flow.Name = name
+			cherryPickedFlow[flow.Order] = []config.Flow{flow}
 		}
 	}
-	return cherryPickedJob
+	return cherryPickedFlow
 }
 
 func reverseStackOrder(stacks []cfn.Stack) []cfn.Stack {
@@ -184,7 +184,7 @@ func reverseStackOrder(stacks []cfn.Stack) []cfn.Stack {
 	return rs
 }
 
-func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {
+func ExecuteFlow(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {
 	defer func() {
 		logger.Log.Debugf("Worker: %d exiting...\n", workerId)
 	}()
@@ -194,12 +194,12 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 		case work := <-workChan:
 			//sleeping from readability
 			time.Sleep(time.Millisecond * 500)
-			name := work.Job.Name
-			job := work.Job
+			name := work.Flow.Name
+			flow := work.Flow
 			dryRun := work.DryRun
 			deployMode := work.DeployMode
-			ctx := context.WithValue(ctx, "job", name)
-			ctx = context.WithValue(ctx, "order", job.Order)
+			ctx := context.WithValue(ctx, "flow", name)
+			ctx = context.WithValue(ctx, "order", flow.Order)
 
 			sess, err := libs.GetAWSSession()
 			if err != nil {
@@ -210,12 +210,10 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 
 			var stacks []cfn.Stack
 			if deployMode {
-				stacks = job.Stacks
+				stacks = flow.Stacks
 			}else{
-				stacks = reverseStackOrder(job.Stacks)
+				stacks = reverseStackOrder(flow.Stacks)
 			}
-
-			fmt.Printf("Stacks: %+v\n", stacks)
 
 			for _, stack := range stacks{
 				ctx := context.WithValue(ctx, "stack", stack.StackName)
@@ -228,26 +226,24 @@ func ExecuteJob(ctx context.Context, workChan chan Work, resultsChan chan Result
 					}
 				} else {
 					if deployMode{
-						logger.Log.InfoCtxf(ctx, "Applying Change...")
 						err = stack.ApplyChanges(ctx, cm)
 					}else{
-						logger.Log.InfoCtxf(ctx, "Destroying Stack...")
 						err = stack.Destroy(ctx, cm)
 					}
 				}
 
 				if err != nil {
-					errStr := fmt.Sprintf("[JOB: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
+					errStr := fmt.Sprintf("[FLOW: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
 					logger.Log.Infoln(errStr)
 					resultsChan <- Result{
 						Error:   errors.New(errStr),
-						JobName: name,
+						FlowName: name,
 					}
 					break
 				}
 			}
 
-			resultsChan <- Result{JobName: name}
+			resultsChan <- Result{FlowName: name}
 
 		case <-ctx.Done():
 			if err := ctx.Err(); err != nil {
@@ -263,8 +259,8 @@ func (c *Composer) PrintConfig() {
 	fmt.Println("# Compose Configuration #")
 	fmt.Println("##########################")
 	fmt.Printf("ConfigFile: %s\n", c.ConfigFile)
-	if c.CherryPickedJob != "" {
-		fmt.Printf("Selected Job: %s\n", c.CherryPickedJob)
+	if c.CherryPickedFlow != "" {
+		fmt.Printf("Selected Flow: %s\n", c.CherryPickedFlow)
 	}
 	fmt.Printf("DryRun: %t\n", c.DryRun)
 	fmt.Printf("LogLevel: %s\n", c.LogLevel)

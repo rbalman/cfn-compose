@@ -13,7 +13,7 @@ var destroyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		c := compose.Composer{
 			LogLevel: logLevel,
-			CherryPickedJob: jobName,
+			CherryPickedFlow: flowName,
 			DeployMode: false,
 			DryRun: dryRun,
 			ConfigFile: configFile,

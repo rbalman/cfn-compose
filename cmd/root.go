@@ -9,7 +9,7 @@ import (
 var configFile string
 var logLevel string
 var dryRun bool
-var jobName string
+var flowName string
 
 var rootCmd = &cobra.Command{
 	Use:   "cfn-compose",
@@ -22,8 +22,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "cfn-compose.yml", "file path to compose file")
 	rootCmd.PersistentFlags().StringVarP(&logLevel, "loglevel", "l", "INFO", "Specify Log Levels. Valid Levels are: DEBUG, INFO, WARN, ERROR")
 	rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "enable dry run mode")
-	deployCmd.PersistentFlags().StringVarP(&jobName, "job", "j", "", "cherry pick job name that you want deploy")
-	destroyCmd.PersistentFlags().StringVarP(&jobName, "job", "j", "", "cherry pick job name that you want destory")
+	deployCmd.PersistentFlags().StringVarP(&flowName, "flow", "f", "", "cherry pick flow name that you want deploy")
+	destroyCmd.PersistentFlags().StringVarP(&flowName, "flow", "f", "", "cherry pick flow name that you want destory")
 
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(destroyCmd)
