@@ -12,7 +12,7 @@ var dryRun bool
 var jobName string
 
 var rootCmd = &cobra.Command{
-	Use:   "cfnc",
+	Use:   "cfn-compose",
 	Version: "0.0.1",
 	Short: "declarative way of managing CloudFormation Stacks at scale",
 	Long: `Manage CloudFormation stacks at scale. Orchestrate the CloudFormation stacks just by specifying the human readable configuration. Right now yml is the only supports format`,
