@@ -1,0 +1,34 @@
+Description: Sample CloudFormation Compose file
+Vars:
+  ENV_NAME: cfn-compose
+  ENV_TYPE: nonproduction
+  SUBNET_ID: "subnet-033274e18559e7bde"
+  VPC_ID: "vpc-0001e3b703212c9cb"
+Flows:
+  SecurityGroup:
+    Order: 0
+    Description: Creates Security Group
+    Stacks:
+    - template_file: sg.yml
+      stack_name: sample-{{ .ENV_NAME }}-security-group
+      parameters:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+        VpcId: '{{ .VPC_ID }}'
+      tags:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+
+  EC2Instance:
+    Order: 1
+    Description: Deploying EC2 Instance
+    Stacks:
+    - template_file: ec2.yml
+      stack_name: sample-{{ .ENV_NAME }}-ec2-instance
+      parameters:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+        SubnetId: '{{ .SUBNET_ID }}'
+      tags:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'

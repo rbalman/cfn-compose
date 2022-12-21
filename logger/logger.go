@@ -72,12 +72,12 @@ func Start(logLevel int32) {
 
 	// Log.Debug = log.New(debugHandle, "[DEBUG] ", log.Ldate|log.Ltime|log.Lshortfile)
 	// Log.Info = log.New(infoHandle, "[INFO] ", log.Ldate|log.Ltime|log.Lshortfile)
-	// Log.Warn = log.New(warnHandle, "[WARNING] ", log.Ldate|log.Ltime|log.Lshortfile)
+	// Log.Warn = log.New(warnHandle, "[WARN] ", log.Ldate|log.Ltime|log.Lshortfile)
 	// Log.Error = log.New(errorHandle, "[ERROR] ", log.Ldate|log.Ltime|log.Lshortfile)
 
 	Log.Debug = log.New(debugHandle, "[DEBUG] ", 0)
 	Log.Info = log.New(infoHandle, "[INFO] ", 0)
-	Log.Warn = log.New(warnHandle, "[WARNING] ", log.Lshortfile)
+	Log.Warn = log.New(warnHandle, "[WARN] ", log.Lshortfile)
 	Log.Error = log.New(errorHandle, "[ERROR] ", log.Lshortfile)
 
 	atomic.StoreInt32(&Log.LogLevel, logLevel)
@@ -175,8 +175,8 @@ func getContextString(ctx context.Context) (ctxStr string) {
 		ctxStr += fmt.Sprintf("[ORDER: %d] ", order)
 	}
 
-	if job, ok := ctx.Value("job").(string); ok {
-		ctxStr += fmt.Sprintf("[JOB: %s] ", job)
+	if flow, ok := ctx.Value("flow").(string); ok {
+		ctxStr += fmt.Sprintf("[FLOW: %s] ", flow)
 	}
 
 	if stack, ok := ctx.Value("stack").(string); ok {

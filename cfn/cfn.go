@@ -20,7 +20,7 @@ type CFNManager struct {
 
 //Details about status: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-describing-stacks.html
 
-var CfnStatus []string = []string{"CREATE_IN_PROGRESS", "CREATE_COMPLETE", "ROLLBACK_IN_PROGRESS", "ROLLBACK_FAILED", "ROLLBACK_COMPLETE", "DELETE_IN_PROGRESS", "DELETE_FAILED", "UPDATE_IN_PROGRESS", "UPDATE_COMPLETE_CLEANUP_IN_PROGRESS", "UPDATE_COMPLETE", "UPDATE_ROLLBACK_IN_PROGRESS", "UPDATE_ROLLBACK_FAILED", "UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS", "UPDATE_ROLLBACK_COMPLETE", "REVIEW_IN_PROGRESS"}
+var CfnStatus []string = []string{"CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE",  "UPDATE_ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_FAILED", "ROLLBACK_FAILED", "DELETE_FAILED", "CREATE_IN_PROGRESS","ROLLBACK_IN_PROGRESS", "DELETE_IN_PROGRESS", "UPDATE_IN_PROGRESS", "UPDATE_COMPLETE_CLEANUP_IN_PROGRESS",  "UPDATE_ROLLBACK_IN_PROGRESS","UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS", "REVIEW_IN_PROGRESS"}
 
 //////// MUTABLE OPERATIONS ////////
 func (cm CFNManager) CreateStack(input *cloudformation.CreateStackInput) (*cloudformation.CreateStackOutput, error) {
@@ -76,7 +76,7 @@ func (cm CFNManager) CreateStackWithWait(ctx context.Context, input *cloudformat
 		return nil, errors.New(fmt.Sprintf("Wait CreateStack failed, ERROR: %s", err.Error()))
 	}
 
-	logger.Log.InfoCtxf(ctx, "Create Completed.")
+	logger.Log.InfoCtxf(ctx, "Create Complete...")
 	return res, nil
 }
 
@@ -112,7 +112,7 @@ func (cm CFNManager) DeleteStackWithWait(ctx context.Context, input *cloudformat
 		return nil, errors.New(fmt.Sprintf("Wait DeleteStack failed, ERROR: %s", err.Error()))
 	}
 
-	logger.Log.InfoCtxf(ctx, "Delete Completed.")
+	logger.Log.InfoCtxf(ctx, "Delete Complete...")
 	return res, nil
 }
 

@@ -12,16 +12,16 @@ import (
 
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "helper functions to work with compose file",
+	Short: "Generate, validate and visualize the compose configuration",
 	Aliases: []string{"c"},
-	Long:  `can be used to validate, generate, read configuration`,
+	Long:  `Generate, validate and visualize the compose configuration`,
 }
 
 var validateCmd = &cobra.Command{
 	Use:   "validate",
-	Short: "validates the compose file configuration",
+	Short: "Validates the compose configuration",
 	Aliases: []string{"vd"},
-	Long:  `validates the compose file configuration. It could be helpful when developing and testing out new configuration`,
+	Long:  `Static validation of the compose configuration. helps to debug configuration issues`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cc, err := config.GetComposeConfig(configFile)
 		if err != nil {
@@ -38,11 +38,11 @@ var validateCmd = &cobra.Command{
 	},
 }
 
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "list all the jobs and stacks",
-	Aliases: []string{"ls"},
-	Long:  `parses the configuration and shows jobs and stacks in defined order`,
+var visualizeCmd = &cobra.Command{
+	Use:   "visualize",
+	Short: "Visualize the stacks dependencies and creation order",
+	Aliases: []string{"vz"},
+	Long:  `Visualize the stacks dependencies and creation order specified in the compose file`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cc, err := config.GetComposeConfig(configFile)
 		if err != nil {
@@ -54,8 +54,8 @@ var listCmd = &cobra.Command{
 			return errors.New(fmt.Sprintf("Failed while validating compose file: %s\n", err.Error()))
 		}
 		
-		jobsMap := compose.SortJobs(cc.Jobs)
-		compose.PrintJobsMap(jobsMap)
+		flowsMap := compose.SortFlows(cc.Flows)
+		compose.PrintFlowsMap(flowsMap)
 
 		return nil
 	},
@@ -63,49 +63,40 @@ var listCmd = &cobra.Command{
 
 var generateCmd = &cobra.Command{
 	Use:   "generate",
-	Short: "generates configuration template",
+	Short: "Generates compose template",
 	Aliases: []string{"gen"},
-	Long:  `generates the sample bootstrap template to speed up the process`,
+	Long:  `Generates the sample bootstrap compose template`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		sampleConfig := config.ComposeConfig {
 			Description: "Sample CloudFormation Compose file",
-			Vars: map[string]string{"ENV_TYPE": "nonproduction"},
-			Jobs: map[string]config.Job{
-				"DataStore": config.Job{
-					Name: "DataStore",
-					Description: "Creates Database and Security Group",
+			Vars: map[string]string{
+				"ENV_NAME": "cfn-compose", 
+				"ENV_TYPE": "nonproduction",
+				"VPC_ID": "",
+				"SUBNET_ID": "",
+			},
+			Flows: map[string]config.Flow{
+				"SecurityGroup": config.Flow{
+					Description: "Creates Sample Security Group",
 					Order: 0,
 					Stacks: []cfn.Stack{
 						cfn.Stack{
-							StackName: "sample-database-network",
-							TemplateFile: "path-to-database-network-cfn-template",
-							Parameters: map[string]string{"DatabaseName": "sample-database-network"},
-							Tags: map[string]string{"Name": "sample-database-network"},
-						},
-						cfn.Stack{
-							StackName: "sample-database-stack",
-							TemplateFile: "path-to-database-cfn-template",
-							Parameters: map[string]string{"DatabaseName": "sample-database"},
-							Tags: map[string]string{"Name": "sample-database"},
+							StackName: "sample-{{ .ENV_NAME }}-security-group",
+							TemplateFile: "sg.yml",
+							Parameters: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}","VpcId": "{{ .VPC_ID }}"},
+							Tags: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}"},
 						},
 					},
 				},
-				"LambdaJob": config.Job{
-					Name: "LambdaJob",
-					Description: "Deploy lambda that uses above datastore",
+				"EC2Instance": config.Flow{
+					Description: "Creates EC2 Instance",
 					Order: 1,
 					Stacks: []cfn.Stack{
 						cfn.Stack{
-							StackName: "lambda-sqs-stack",
-							TemplateFile: "path-to-lambda-sqs-template",
-							Parameters: map[string]string{"DelaySeconds": "5"},
-							Tags: map[string]string{"Name": "lamdbda-publisher-sqs"},
-						},
-						cfn.Stack{
-							StackName: "database-consumer-lambda-stack",
-							TemplateFile: "path-to-lambda-cfn-template",
-							Parameters: map[string]string{"LambdaName": "database-consumer-lambda"},
-							Tags: map[string]string{"Name": "database-consumer-lambda"},
+							StackName: "sample-{{ .ENV_NAME }}-ec2-instance",
+							TemplateFile: "ec2.yml",
+							Parameters: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}", "SubnetId": "{{ .SUBNET_ID }}"},
+							Tags: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}"},
 						},
 					},
 				},
@@ -117,7 +108,7 @@ var generateCmd = &cobra.Command{
 			return errors.New(fmt.Sprintf("Failed to generate sample compose file: %s\n", err.Error()))
 		}
 
-		fmt.Printf("### SAMPLE TEMPLATE ###\n%s", d)
+		fmt.Printf("%s", d)
 
 		return nil
 	},

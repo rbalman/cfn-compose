@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
+	"github.com/balmanrawat/cfn-compose/logger"
 	"context"
 	"time"
 )
@@ -15,7 +16,6 @@ import (
 func GetAWSSession() (*session.Session, error) {
 	region := os.Getenv("AWS_REGION")
 	return session.NewSessionWithOptions(session.Options{
-		// Profile: profile,
 		Config: aws.Config{
 			Region: &region,
 			Retryer: client.DefaultRetryer{ //https://github.com/aws/aws-sdk-go/tree/main/example/aws/request/customRetryer
@@ -51,11 +51,10 @@ func Loader(ctx context.Context, ch chan bool) {
 	for {
 		select {
 		case <-ch:
-			fmt.Printf("\n")
 			return
 		default:
-			time.Sleep(500 * time.Millisecond)
-			fmt.Print(".")
+			time.Sleep(15000 * time.Millisecond)
+			logger.Log.InfoCtxf(ctx, "→ →..")
 		}
 	}
 }

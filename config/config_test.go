@@ -7,7 +7,7 @@ import (
 )
 
 func TestValidateComposeConfig(t *testing.T) {
-	t.Log("When There are no jobs in Compose")
+	t.Log("When There are no flows in Compose")
 	{
 		var cc ComposeConfig
 		err := cc.Validate()
@@ -16,16 +16,16 @@ func TestValidateComposeConfig(t *testing.T) {
 		}
 	}
 
-	t.Log("When jobs count is above the limit")
+	t.Log("When flows count is above the limit")
 	{
 		cc := ComposeConfig{
-			Jobs: map[string]Job{
-				"job1": Job{},
-				"job2": Job{},
-				"job3": Job{},
-				"job4": Job{},
-				"job5": Job{},
-				"job6": Job{},
+			Flows: map[string]Flow{
+				"flow1": Flow{},
+				"flow2": Flow{},
+				"flow3": Flow{},
+				"flow4": Flow{},
+				"flow5": Flow{},
+				"flow6": Flow{},
 			},
 		}
 
@@ -35,17 +35,17 @@ func TestValidateComposeConfig(t *testing.T) {
 		}
 	}
 
-	t.Log("When job order is negative")
+	t.Log("When flow order is negative")
 	{
 		cc := ComposeConfig{
-			Jobs: map[string]Job{
-				"job1": Job{
+			Flows: map[string]Flow{
+				"flow1": Flow{
 					Order: -1,
 					Stacks: []cfn.Stack{
 						cfn.Stack{},
 					},
 				},
-				"job2": Job{
+				"flow2": Flow{
 					Order: 1,
 					Stacks: []cfn.Stack{
 						cfn.Stack{},
@@ -60,17 +60,17 @@ func TestValidateComposeConfig(t *testing.T) {
 		}
 	}
 
-	t.Log("When job order is greater than 100")
+	t.Log("When flow order is greater than 100")
 	{
 		cc := ComposeConfig{
-			Jobs: map[string]Job{
-				"job1": Job{
+			Flows: map[string]Flow{
+				"flow1": Flow{
 					Order: 101,
 					Stacks: []cfn.Stack{
 						cfn.Stack{},
 					},
 				},
-				"job2": Job{
+				"flow2": Flow{
 					Order: 1,
 					Stacks: []cfn.Stack{
 						cfn.Stack{},
@@ -85,18 +85,18 @@ func TestValidateComposeConfig(t *testing.T) {
 		}
 	}
 
-	t.Log("When one or more job doesn't have any stack")
+	t.Log("When one or more flow doesn't have any stack")
 	{
 		cc := ComposeConfig{
-			Jobs: map[string]Job{
-				"job1": Job{
+			Flows: map[string]Flow{
+				"flow1": Flow{
 					Stacks: []cfn.Stack{
 						cfn.Stack{},
 						cfn.Stack{},
 					},
 				},
-				"job2": Job{},
-				"job6": Job{},
+				"flow2": Flow{},
+				"flow6": Flow{},
 			},
 		}
 
@@ -106,11 +106,11 @@ func TestValidateComposeConfig(t *testing.T) {
 		}
 	}
 
-	t.Log("When one or more job has stacks above the limit")
+	t.Log("When one or more flow has stacks above the limit")
 	{
 		cc := ComposeConfig{
-			Jobs: map[string]Job{
-				"job1": Job{
+			Flows: map[string]Flow{
+				"flow1": Flow{
 					Stacks: []cfn.Stack{
 						cfn.Stack{},
 						cfn.Stack{},
@@ -150,8 +150,8 @@ func TestValidateComposeConfig(t *testing.T) {
 						cfn.Stack{},
 					},
 				},
-				"job2": Job{},
-				"job3": Job{},
+				"flow2": Flow{},
+				"flow3": Flow{},
 			},
 		}
 
@@ -164,13 +164,13 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When stack doesn't have a name")
 	{
 		cc := ComposeConfig{
-			Jobs: map[string]Job{
-				"job1": Job{
+			Flows: map[string]Flow{
+				"flow1": Flow{
 					Stacks: []cfn.Stack{
 						cfn.Stack{},
 					},
 				},
-				"job2": Job{
+				"flow2": Flow{
 					Stacks: []cfn.Stack{
 						cfn.Stack{},
 					},
@@ -187,8 +187,8 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When stack doesn't provide both template_url/template_file name")
 	{
 		cc := ComposeConfig{
-			Jobs: map[string]Job{
-				"job1": Job{
+			Flows: map[string]Flow{
+				"flow1": Flow{
 					Stacks: []cfn.Stack{
 						cfn.Stack{
 							StackName: "s1-stack",
@@ -208,8 +208,8 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When stack both template_url/template_file is provided")
 	{
 		cc := ComposeConfig{
-			Jobs: map[string]Job{
-				"job1": Job{
+			Flows: map[string]Flow{
+				"flow1": Flow{
 					Stacks: []cfn.Stack{
 						cfn.Stack{
 							StackName:    "s1-stack",
@@ -230,8 +230,8 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When only template_url is provided")
 	{
 		cc := ComposeConfig{
-			Jobs: map[string]Job{
-				"job1": Job{
+			Flows: map[string]Flow{
+				"flow1": Flow{
 					Stacks: []cfn.Stack{
 						cfn.Stack{
 							StackName:   "s1-stack",
@@ -251,8 +251,8 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When only template_file is provided")
 	{
 		cc := ComposeConfig{
-			Jobs: map[string]Job{
-				"job1": Job{
+			Flows: map[string]Flow{
+				"flow1": Flow{
 					Stacks: []cfn.Stack{
 						cfn.Stack{
 							StackName:    "s1-stack",
