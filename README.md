@@ -154,6 +154,8 @@ Flows:
         EnvironmentType: '{{ .ENV_TYPE }}'
 ```
 
+[Details Example](examples/ec2-sqs/Readme.md)
+
 ## Limitations
 * Supports limited CFN attributes
 * No Retry Mechanism
