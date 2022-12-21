@@ -3,3 +3,4 @@
 main
 cfn-compose
 coverage
+.DS_Store

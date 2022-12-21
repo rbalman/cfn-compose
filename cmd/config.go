@@ -71,14 +71,13 @@ var generateCmd = &cobra.Command{
 			Description: "Sample CloudFormation Compose file",
 			Vars: map[string]string{
 				"ENV_NAME": "cfn-compose", 
-				"ENV_TYPE": "nonproduction", 
-				"DelaySeconds": "60",
+				"ENV_TYPE": "nonproduction",
 				"VPC_ID": "",
 				"SUBNET_ID": "",
 			},
 			Flows: map[string]config.Flow{
-				"EC2Instance": config.Flow{
-					Description: "Creates EC2 Instance Security Group",
+				"SecurityGroup": config.Flow{
+					Description: "Creates Sample Security Group",
 					Order: 0,
 					Stacks: []cfn.Stack{
 						cfn.Stack{
@@ -87,22 +86,16 @@ var generateCmd = &cobra.Command{
 							Parameters: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}","VpcId": "{{ .VPC_ID }}"},
 							Tags: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}"},
 						},
+					},
+				},
+				"EC2Instance": config.Flow{
+					Description: "Creates EC2 Instance",
+					Order: 1,
+					Stacks: []cfn.Stack{
 						cfn.Stack{
 							StackName: "sample-{{ .ENV_NAME }}-ec2-instance",
 							TemplateFile: "ec2.yml",
 							Parameters: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}", "SubnetId": "{{ .SUBNET_ID }}"},
-							Tags: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}"},
-						},
-					},
-				},
-				"MessageQueue": config.Flow{
-					Description: "Deploying Queuing Resources",
-					Order: 1,
-					Stacks: []cfn.Stack{
-						cfn.Stack{
-							StackName: "sample-{{ .ENV_NAME }}-sqs",
-							TemplateFile: "sqs.yml",
-							Parameters: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}", "DelaySeconds": "{{ .DelaySeconds }}"},
 							Tags: map[string]string{"EnvironmentName": "{{ .ENV_NAME }}", "EnvironmentType": "{{ .ENV_TYPE }}"},
 						},
 					},

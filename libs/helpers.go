@@ -16,7 +16,6 @@ import (
 func GetAWSSession() (*session.Session, error) {
 	region := os.Getenv("AWS_REGION")
 	return session.NewSessionWithOptions(session.Options{
-		// Profile: profile,
 		Config: aws.Config{
 			Region: &region,
 			Retryer: client.DefaultRetryer{ //https://github.com/aws/aws-sdk-go/tree/main/example/aws/request/customRetryer
