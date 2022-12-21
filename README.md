@@ -9,6 +9,7 @@ By Balman Rawat while working at [CloudFactory](https://www.cloudfactory.com/)
 * Delete multiple CloudFormation stacks respecting the creation sequence
 * DryRun mode to plan the change
 * Generate/Validate/visualize configuration with ease
+* Supports Go Templating for dynamic value substitution
 
 ![Demo](./docs/images/demo.gif)
 
@@ -76,6 +77,87 @@ cfn-compose config visualize
 | cfn-compose config visualize | no flags | Visualize the stacks dependencies and creation order |
 | cfn-compose | -v, --version |  version for cfn-compose |
 
+## Compose Configuration
+Syntax:
+```yaml
+Description: Sample CloudFormation Compose file
+Vars:
+  Key: Value
+Flows:
+  Flow1:
+    Order: 0
+    Description: Flow1 Description
+    Stacks:
+    - Stack1
+    - Stack2
+  Flow2:
+    Order: 1
+    Description: Flow2 description
+    Stacks:
+    - Stack1
+    - Stack2
+```
+A typical compose configuration contains:
+- Optional `Description`
+- Optional `Vars` section to define variables in `Key: Value` mapping
+eg:
+
+```yaml
+Vars:
+  ENV_TYPE: "nonproduction"
+  ENV_NAME: "demo"
+  AWS_PROFILE: "demo"
+```
+- Mandatory `Flows:` section
+`Flow` is a collection of CloudFormation stacks that are deployed sequentially. `Flows` is collection of flows which can be ordered using `Order` property. `Flows` can run in parallel or sequentially based on the Order property. 
+  - Optional `Order` can be any `unsigned` integer. Default `Order` is set to `0`. Flow with lowest orders are deployed first.
+  - Optinal `Description`
+  - Mandatory `Stacks` which is the collection of CFN stack. Below are the supported attributes of the stack object
+    - mandatory `template_file` or `template_url` (only s3 url)
+    - mandatory `stack_name`
+    - optinal `capabilities`
+    - optinal `parameters`
+    - optinal `tags`
+    - optinal `tags`
+
+**Sample:**
+```yaml
+Description: Sample CloudFormation Compose file
+Vars:
+  ENV_NAME: cfn-compose
+  ENV_TYPE: nonproduction
+Flows:
+  SecurityGroup:
+    Order: 0
+    Description: Creates SecurityGroup
+    Stacks:
+    - template_file: <cfn-template-path>
+      stack_name: stack-name1
+      parameters:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+      tags:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+
+  EC2Instance:
+    Order: 1
+    Description: Deploying EC2 Instance
+    Stacks:
+    - template_file: <cfn-template-path>
+      stack_name: stack-name2
+      parameters:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+      tags:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+```
+
+## Limitations
+* Supports limited CFN attributes
+* No Retry Mechanism
+
 ## Installation
 Binary is available for Linux, Windows and Mac OS (amd64 and arm64). Download the binary for your respective platform from the [releases page](https://github.com/rbalman/cfn-compose/releases).
 
@@ -121,14 +203,7 @@ unzip cfn-compose-v0.0.1-beta-windows-amd64.zip
 ```
 
 ## Contribution
-
-There are lots of optimization. Go version 1.18+ is required.
-
-```
-git clone https://github.com/rbalman/cfn-compose
-cd cfn-compose 
-go build
-```
+There is a lot of room for enhancements and you are more than welcome to contribute. If any concerns or recommendations [create issues](https://github.com/rbalman/cfn-compose/issues). If want to contribute [create PR](https://github.com/rbalman/cfn-compose/pulls)
 
 ## Contributors
 - [Balman Rawat](https://github.com/rbalman)

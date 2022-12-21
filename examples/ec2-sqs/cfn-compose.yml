@@ -1,14 +1,13 @@
 Description: Sample CloudFormation Compose file
 Vars:
-  DelaySeconds: "60"
   ENV_NAME: cfn-compose
   ENV_TYPE: nonproduction
   SUBNET_ID: "subnet-033274e18559e7bde"
   VPC_ID: "vpc-0001e3b703212c9cb"
 Flows:
-  EC2Instance:
+  SecurityGroup:
     Order: 0
-    Description: Creates EC2 Instance Security Group
+    Description: Creates Security Group
     Stacks:
     - template_file: sg.yml
       stack_name: sample-{{ .ENV_NAME }}-security-group
@@ -19,26 +18,17 @@ Flows:
       tags:
         EnvironmentName: '{{ .ENV_NAME }}'
         EnvironmentType: '{{ .ENV_TYPE }}'
+
+  EC2Instance:
+    Order: 1
+    Description: Deploying EC2 Instance
+    Stacks:
     - template_file: ec2.yml
       stack_name: sample-{{ .ENV_NAME }}-ec2-instance
       parameters:
         EnvironmentName: '{{ .ENV_NAME }}'
         EnvironmentType: '{{ .ENV_TYPE }}'
         SubnetId: '{{ .SUBNET_ID }}'
-      tags:
-        EnvironmentName: '{{ .ENV_NAME }}'
-        EnvironmentType: '{{ .ENV_TYPE }}'
-
-  MessageQueue:
-    Order: 1
-    Description: Deploying Queuing Resources
-    Stacks:
-    - template_file: sqs.yml
-      stack_name: sample-{{ .ENV_NAME }}-sqs
-      parameters:
-        DelaySeconds: '{{ .DelaySeconds }}'
-        EnvironmentName: '{{ .ENV_NAME }}'
-        EnvironmentType: '{{ .ENV_TYPE }}'
       tags:
         EnvironmentName: '{{ .ENV_NAME }}'
         EnvironmentType: '{{ .ENV_TYPE }}'
