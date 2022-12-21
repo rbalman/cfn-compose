@@ -78,7 +78,8 @@ cfn-compose config visualize
 | cfn-compose | -v, --version |  version for cfn-compose |
 
 ## Compose Configuration
-Syntax:
+**Syntax:**
+
 ```yaml
 Description: Sample CloudFormation Compose file
 Vars:
