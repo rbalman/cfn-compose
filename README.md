@@ -120,9 +120,9 @@ curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/
 unzip cfn-compose-v0.0.1-beta-windows-amd64.zip
 ```
 
-## Development
+## Contribution
 
-If you wish to contribute or compile from source code, you'll first need Go installed on your machine. Go version 1.18+ is required.
+There are lots of optimization. Go version 1.18+ is required.
 
 ```
 git clone https://github.com/rbalman/cfn-compose
