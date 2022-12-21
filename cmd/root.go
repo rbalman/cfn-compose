@@ -13,7 +13,7 @@ var flowName string
 
 var rootCmd = &cobra.Command{
 	Use:   "cfn-compose",
-	Version: "0.0.1",
+	Version: "0.0.1-beta",
 	Short: "Declarative way of managing cloudformation stacks at scale",
 	Long: `Manage cloudformation stacks at scale. Design and deploy multiple cloudformation stacks either in sequence or in prallel using declarative configuration`,
 }
