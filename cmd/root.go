@@ -14,16 +14,16 @@ var flowName string
 var rootCmd = &cobra.Command{
 	Use:   "cfn-compose",
 	Version: "0.0.1",
-	Short: "declarative way of managing CloudFormation Stacks at scale",
-	Long: `Manage CloudFormation stacks at scale. Orchestrate the CloudFormation stacks just by specifying the human readable configuration. Right now yml is the only supports format`,
+	Short: "Declarative way of managing cloudformation stacks at scale",
+	Long: `Manage cloudformation stacks at scale. Design and deploy multiple cloudformation stacks either in sequence or in prallel using declarative configuration`,
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "cfn-compose.yml", "file path to compose file")
+	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "cfn-compose.yml", "File path to compose file")
 	rootCmd.PersistentFlags().StringVarP(&logLevel, "loglevel", "l", "INFO", "Specify Log Levels. Valid Levels are: DEBUG, INFO, WARN, ERROR")
-	rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "enable dry run mode")
-	deployCmd.PersistentFlags().StringVarP(&flowName, "flow", "f", "", "cherry pick flow name that you want deploy")
-	destroyCmd.PersistentFlags().StringVarP(&flowName, "flow", "f", "", "cherry pick flow name that you want destory")
+	rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "Run commands in dry run mode")
+	deployCmd.PersistentFlags().StringVarP(&flowName, "flow", "f", "", "Cherry pick flow name that you want to deploy")
+	destroyCmd.PersistentFlags().StringVarP(&flowName, "flow", "f", "", "Cherry pick flow name that you want to destory")
 
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(destroyCmd)

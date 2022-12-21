@@ -12,16 +12,16 @@ import (
 
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "helper functions to work with compose file",
+	Short: "Generate, validate and visualize the compose configuration",
 	Aliases: []string{"c"},
-	Long:  `can be used to validate, generate, read configuration`,
+	Long:  `Generate, validate and visualize the compose configuration`,
 }
 
 var validateCmd = &cobra.Command{
 	Use:   "validate",
-	Short: "validates the compose file configuration",
+	Short: "Validates the compose configuration",
 	Aliases: []string{"vd"},
-	Long:  `validates the compose file configuration. It could be helpful when developing and testing out new configuration`,
+	Long:  `Static validation of the compose configuration. helps to debug configuration issues`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cc, err := config.GetComposeConfig(configFile)
 		if err != nil {
@@ -40,9 +40,9 @@ var validateCmd = &cobra.Command{
 
 var visualizeCmd = &cobra.Command{
 	Use:   "visualize",
-	Short: "visualize flows and stacks",
+	Short: "Visualize the stacks dependencies and creation order",
 	Aliases: []string{"vz"},
-	Long:  `parses the configuration and shows flows and stacks in defined order`,
+	Long:  `Visualize the stacks dependencies and creation order specified in the compose file`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cc, err := config.GetComposeConfig(configFile)
 		if err != nil {
@@ -63,9 +63,9 @@ var visualizeCmd = &cobra.Command{
 
 var generateCmd = &cobra.Command{
 	Use:   "generate",
-	Short: "generates configuration template",
+	Short: "Generates compose template",
 	Aliases: []string{"gen"},
-	Long:  `generates the sample bootstrap template to speed up the process`,
+	Long:  `Generates the sample bootstrap compose template`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		sampleConfig := config.ComposeConfig {
 			Description: "Sample CloudFormation Compose file",

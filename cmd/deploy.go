@@ -7,9 +7,9 @@ import (
 
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
-	Short: "deploys the stacks that are part of the compose file",
+	Short: "Deploys the stacks based on the sequence specified in the compose configuration",
 	Aliases: []string{"dp"},
-	Long:  `deploy respects the order specified in the compose file and applies the changes accordingly in the individual CFN stacks. Behind the scene it creates the stack if not created and updates the stack if it already exists. Supports dryRun mode, use --dry-run or -d flag.`,
+	Long:  `Deploys stacks based on the sequence specified in the compose configuration. Behind the scene it creates the stack if not created and updates the stack if already created. Supports dryRun mode, use --dry-run or -d flag.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		c := compose.Composer{
 			LogLevel: logLevel,
