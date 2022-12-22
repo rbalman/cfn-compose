@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 	"testing"
-	"github.com/balmanrawat/cfn-compose/cfn"
+	"github.com/rbalman/cfn-compose/cfn"
 )
 
 func TestValidateComposeConfig(t *testing.T) {

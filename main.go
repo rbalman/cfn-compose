@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/balmanrawat/cfn-compose/cmd"
+	"github.com/rbalman/cfn-compose/cmd"
 )
 
 func main() {

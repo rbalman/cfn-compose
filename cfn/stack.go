@@ -1,8 +1,8 @@
 package cfn
 
 import (
-	"github.com/balmanrawat/cfn-compose/logger"
-	"github.com/balmanrawat/cfn-compose/libs"
+	"github.com/rbalman/cfn-compose/logger"
+	"github.com/rbalman/cfn-compose/libs"
 	"context"
 	"errors"
 	"fmt"

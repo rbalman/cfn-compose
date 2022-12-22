@@ -1,8 +1,8 @@
 package cfn
 
 import (
-	"github.com/balmanrawat/cfn-compose/logger"
-	"github.com/balmanrawat/cfn-compose/libs"
+	"github.com/rbalman/cfn-compose/logger"
+	"github.com/rbalman/cfn-compose/libs"
 	"context"
 	"errors"
 	"fmt"
@@ -18,8 +18,7 @@ type CFNManager struct {
 	Session *session.Session
 }
 
-//Details about status: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-describing-stacks.html
-
+//Details on CFN Status: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-describing-stacks.html
 var CfnStatus []string = []string{"CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE",  "UPDATE_ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_FAILED", "ROLLBACK_FAILED", "DELETE_FAILED", "CREATE_IN_PROGRESS","ROLLBACK_IN_PROGRESS", "DELETE_IN_PROGRESS", "UPDATE_IN_PROGRESS", "UPDATE_COMPLETE_CLEANUP_IN_PROGRESS",  "UPDATE_ROLLBACK_IN_PROGRESS","UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS", "REVIEW_IN_PROGRESS"}
 
 //////// MUTABLE OPERATIONS ////////

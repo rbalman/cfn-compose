@@ -2,7 +2,7 @@ package compose
 
 import (
 	"testing"
-	"github.com/balmanrawat/cfn-compose/cfn"
+	"github.com/rbalman/cfn-compose/cfn"
 	"fmt"
 )
 

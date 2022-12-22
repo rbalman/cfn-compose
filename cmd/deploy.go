@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/balmanrawat/cfn-compose/compose"
+	"github.com/rbalman/cfn-compose/compose"
 )
 
 var deployCmd = &cobra.Command{
