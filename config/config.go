@@ -8,7 +8,6 @@ import (
 )
 
 const composeDir string = ".cfn-compose"
-const varsTemplate string = "var.yml"
 const composeTemplate string = "compose.yml"
 var flowCountLimit int = 50
 var stackCountLimit int = 50
@@ -40,10 +39,6 @@ func (j *Flow) Validate(name string) error {
 	if j.Order < 0 || j.Order > 100 {
 		return fmt.Errorf("Flow Order should be within 0-100 range, found: %d", j.Order)
 	}
-
-	// if j.Order < 0 {
-	// 	return fmt.Errorf("Flow Order Can't be negative value, found: %d", j.Order)
-	// }
 
 	for i, stack := range j.Stacks {
 		err := stack.Validate(i)
