@@ -1,4 +1,4 @@
-module github.com/balmanrawat/cfn-compose
+module github.com/rbalman/cfn-compose
 
 go 1.18
 

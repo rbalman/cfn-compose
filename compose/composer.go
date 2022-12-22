@@ -1,12 +1,11 @@
 package compose
 
 import (
-	"github.com/balmanrawat/cfn-compose/cfn"
-	"github.com/balmanrawat/cfn-compose/logger"
-	"github.com/balmanrawat/cfn-compose/libs"
-	"github.com/balmanrawat/cfn-compose/config"
+	"github.com/rbalman/cfn-compose/cfn"
+	"github.com/rbalman/cfn-compose/logger"
+	"github.com/rbalman/cfn-compose/libs"
+	"github.com/rbalman/cfn-compose/config"
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -15,10 +14,8 @@ import (
 
 // var colors []string = []string{log.Blue, log.Yellow, log.Green, log.Magenta, log.Cyan}
 
-type Work struct {
-	Flow        config.Flow
-	DryRun     bool
-	DeployMode bool
+type Task interface {
+	Execute(context.Context) Result
 }
 
 type Result struct {
@@ -27,7 +24,6 @@ type Result struct {
 }
 
 type Composer struct {
-	Config config.ComposeConfig
 	LogLevel string
 	CherryPickedFlow string
 	DeployMode bool
@@ -52,8 +48,25 @@ func (c *Composer)Apply() {
 		os.Exit(1)
 	}
 
-	c.Config = cc
 	logger.StartWithLabel(c.LogLevel)
+
+	var flowsMap map[int][]config.Flow
+	if c.CherryPickedFlow != "" {
+		flowsMap = cherryPickFlow(c.CherryPickedFlow, cc.Flows)
+		if len(flowsMap) == 0 {
+			fmt.Printf("Err: Cannot find the selected flow: %s in the config\n", c.CherryPickedFlow)
+			os.Exit(1)
+		}
+	}else{
+		flowsMap = SortFlows(cc.Flows)
+	}
+	
+	orders := keys(flowsMap)
+	if c.DeployMode {
+		sort.Ints(orders)
+	}else{
+		sort.Sort(sort.Reverse(sort.IntSlice(orders)))
+	}
 
 	// Exporting AWS_PROFILE and AWS_REGION got from config
 	if val, ok := cc.Vars["AWS_PROFILE"]; ok {
@@ -64,33 +77,22 @@ func (c *Composer)Apply() {
 		os.Setenv("AWS_REGION", val)
 	}
 
-	var flowsMap map[int][]config.Flow
-	if c.CherryPickedFlow != "" {
-		flowsMap = cherryPickFlow(c.CherryPickedFlow, c.Config.Flows)
-		if len(flowsMap) == 0 {
-			fmt.Printf("Err: Cannot find the selected flow: %s in the config\n", c.CherryPickedFlow)
-			os.Exit(1)
-		}
-	}else{
-		flowsMap = SortFlows(c.Config.Flows)
-	}
-	
-	orders := keys(flowsMap)
-	if c.DeployMode {
-		sort.Ints(orders)
-	}else{
-		sort.Sort(sort.Reverse(sort.IntSlice(orders)))
-	}
+	sess, err := libs.GetAWSSession()
+			if err != nil {
+				logger.Log.Errorf("Failed while creating AWS Session: %s\n", err.Error())
+				os.Exit(1)
+			}
+	cm := cfn.CFNManager{Session: sess}
 
-	workChan := make(chan Work)
+	cfnTask := make(chan Task)
 	resultsChan := make(chan Result)
 	//Generate the worker pool as pre the flow counts
-	for i := 0; i < len(c.Config.Flows); i++ {
-		go ExecuteFlow(ctx, workChan, resultsChan, i)
+	for i := 0; i < len(cc.Flows); i++ {
+		go executeFlow(ctx, cfnTask, resultsChan, i)
 	}
-	logger.Log.Debugf("TOTAL FLOW COUNT: %d\n", len(c.Config.Flows))
+	logger.Log.Debugf("TOTAL FLOW COUNT: %d\n", len(cc.Flows))
 	
-	//Dispatch Flows in order
+	//Dispatch Flows based on the Order
 	for _, order := range orders {
 		flows, ok := flowsMap[order]
 		if !ok {
@@ -98,26 +100,26 @@ func (c *Composer)Apply() {
 		}
 
 		for _, flow := range flows {
-			workChan <- Work{Flow: flow, DryRun: c.DryRun, DeployMode: c.DeployMode}
+			cfnTask <- CfnTask{Flow: flow, DryRun: c.DryRun, DeployMode: c.DeployMode, CM: cm}
 		}
 
 		logger.Log.Debugf("Dispatched Order: %d, FlowCount: %d.\n", order, len(flows))
 
-		//wait for flows in each order to complete
+		//Wait for dispatched flows
 		for i := 0; i < len(flows); i++ {
+			//TODO: Add some form of timer for timeout
 			r := <-resultsChan
 			if r.Error != nil {
 				cancelCtx()
 				logger.Log.Debugln("Graceful wait for cancelled flows")
 				time.Sleep(time.Second * 5)
-				logger.Log.Errorf("compose failed with Error: %s", r.Error)
+				logger.Log.Errorf("Compose failed with Error: %s", r.Error)
 				return
 			}
 		}
 		logger.Log.Infof("All Flows completed for Order: %d\n\n", order)
 	}
 
-	time.Sleep(time.Second * 2)
 	logger.Log.Infoln("Successfully Completed!!")
 }
 
@@ -138,7 +140,7 @@ func SortFlows(flows map[string]config.Flow) (map[int][]config.Flow) {
 	return sortedFlows
 }
 
-func PrintFlowsMap(flowsMap map[int][]config.Flow) () {
+func VisualizeFlowsMap(flowsMap map[int][]config.Flow) () {
 	orders := keys(flowsMap)
 	sort.Ints(orders)
 
@@ -184,66 +186,17 @@ func reverseStackOrder(stacks []cfn.Stack) []cfn.Stack {
 	return rs
 }
 
-func ExecuteFlow(ctx context.Context, workChan chan Work, resultsChan chan Result, workerId int) {
+func executeFlow(ctx context.Context, taskC chan Task, resultsChan chan Result, workerId int) {
 	defer func() {
 		logger.Log.Debugf("Worker: %d exiting...\n", workerId)
 	}()
 
 	for {
 		select {
-		case work := <-workChan:
-			//sleeping from readability
+		case task := <-taskC:
 			time.Sleep(time.Millisecond * 500)
-			name := work.Flow.Name
-			flow := work.Flow
-			dryRun := work.DryRun
-			deployMode := work.DeployMode
-			ctx := context.WithValue(ctx, "flow", name)
-			ctx = context.WithValue(ctx, "order", flow.Order)
-
-			sess, err := libs.GetAWSSession()
-			if err != nil {
-				logger.Log.Errorf("Failed while creating AWS Session: %s\n", err.Error())
-				os.Exit(1)
-			}
-			cm := cfn.CFNManager{Session: sess}
-
-			var stacks []cfn.Stack
-			if deployMode {
-				stacks = flow.Stacks
-			}else{
-				stacks = reverseStackOrder(flow.Stacks)
-			}
-
-			for _, stack := range stacks{
-				ctx := context.WithValue(ctx, "stack", stack.StackName)
-				var err error
-				if dryRun {
-					if deployMode{
-						err = stack.ApplyDryRun(ctx, cm)
-					}else{
-						err = stack.DestoryDryRun(ctx, cm)
-					}
-				} else {
-					if deployMode{
-						err = stack.ApplyChanges(ctx, cm)
-					}else{
-						err = stack.Destroy(ctx, cm)
-					}
-				}
-
-				if err != nil {
-					errStr := fmt.Sprintf("[FLOW: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
-					logger.Log.Infoln(errStr)
-					resultsChan <- Result{
-						Error:   errors.New(errStr),
-						FlowName: name,
-					}
-					break
-				}
-			}
-
-			resultsChan <- Result{FlowName: name}
+			result := task.Execute(ctx)
+			resultsChan <- result
 
 		case <-ctx.Done():
 			if err := ctx.Err(); err != nil {

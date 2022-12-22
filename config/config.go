@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"github.com/balmanrawat/cfn-compose/cfn"
+	"github.com/rbalman/cfn-compose/cfn"
 	"path/filepath"
 	"os"
 )
@@ -10,8 +10,8 @@ import (
 const composeDir string = ".cfn-compose"
 const varsTemplate string = "var.yml"
 const composeTemplate string = "compose.yml"
-var flowCountLimit int = 15
-var stackCountLimit int = 30
+var flowCountLimit int = 50
+var stackCountLimit int = 50
 
 type ComposeConfig struct {
 	Description string            `yaml:"Description"`

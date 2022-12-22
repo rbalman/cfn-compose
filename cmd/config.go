@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/balmanrawat/cfn-compose/config"
-	"github.com/balmanrawat/cfn-compose/cfn"
-	"github.com/balmanrawat/cfn-compose/compose"
+	"github.com/rbalman/cfn-compose/config"
+	"github.com/rbalman/cfn-compose/cfn"
+	"github.com/rbalman/cfn-compose/compose"
 	"gopkg.in/yaml.v2"
 	"errors"
 	"fmt"
@@ -55,7 +55,7 @@ var visualizeCmd = &cobra.Command{
 		}
 		
 		flowsMap := compose.SortFlows(cc.Flows)
-		compose.PrintFlowsMap(flowsMap)
+		compose.VisualizeFlowsMap(flowsMap)
 
 		return nil
 	},

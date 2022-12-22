@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/balmanrawat/cfn-compose/logger"
+	"github.com/rbalman/cfn-compose/logger"
 	"context"
 	"time"
 )
