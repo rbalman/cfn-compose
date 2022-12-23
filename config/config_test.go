@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/rbalman/cfn-compose/cfn"
 	"testing"
+	"strconv"
 )
 
 func TestValidateComposeConfig(t *testing.T) {
@@ -19,14 +20,7 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When flows count is above the limit")
 	{
 		cc := ComposeConfig{
-			Flows: map[string]Flow{
-				"flow1": {},
-				"flow2": {},
-				"flow3": {},
-				"flow4": {},
-				"flow5": {},
-				"flow6": {},
-			},
+			Flows: generateFlowsMap(flowCountLimit +1, 1),
 		}
 
 		err := cc.Validate()
@@ -109,50 +103,7 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When one or more flow has stacks above the limit")
 	{
 		cc := ComposeConfig{
-			Flows: map[string]Flow{
-				"flow1": {
-					Stacks: []cfn.Stack{
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-						{},
-					},
-				},
-				"flow2": {},
-				"flow3": {},
-			},
+			Flows: generateFlowsMap(1, stackCountLimit + 1),
 		}
 
 		err := cc.Validate()
@@ -268,4 +219,24 @@ func TestValidateComposeConfig(t *testing.T) {
 			t.Fatal(fmt.Sprintf("Validation should return nil but found error: %s", err))
 		}
 	}
+}
+
+func generateFlowsMap(flowCount, stackCount int) map[string]Flow {
+	m := make(map[string]Flow)
+	var stacks []cfn.Stack
+	
+	for i := 0; i < stackCount ; i++ {
+		name := "stack" + strconv.Itoa(i)
+		stacks = append(stacks, cfn.Stack{StackName:name, TemplateFile: name + ".yml"  })
+	}
+
+	for i := 0; i < flowCount ; i++ {
+		key := "flow" + strconv.Itoa(i)
+		m[key] = Flow{
+			Description: key, 
+			Stacks: stacks,
+		}
+	}
+
+	return m
 }
