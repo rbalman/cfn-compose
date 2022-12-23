@@ -3,8 +3,8 @@ package config
 import (
 	"fmt"
 	"github.com/rbalman/cfn-compose/cfn"
-	"testing"
 	"strconv"
+	"testing"
 )
 
 func TestValidateComposeConfig(t *testing.T) {
@@ -20,7 +20,7 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When flows count is above the limit")
 	{
 		cc := ComposeConfig{
-			Flows: generateFlowsMap(flowCountLimit +1, 1),
+			Flows: generateFlowsMap(flowCountLimit+1, 1),
 		}
 
 		err := cc.Validate()
@@ -103,7 +103,7 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When one or more flow has stacks above the limit")
 	{
 		cc := ComposeConfig{
-			Flows: generateFlowsMap(1, stackCountLimit + 1),
+			Flows: generateFlowsMap(1, stackCountLimit+1),
 		}
 
 		err := cc.Validate()
@@ -224,17 +224,17 @@ func TestValidateComposeConfig(t *testing.T) {
 func generateFlowsMap(flowCount, stackCount int) map[string]Flow {
 	m := make(map[string]Flow)
 	var stacks []cfn.Stack
-	
-	for i := 0; i < stackCount ; i++ {
+
+	for i := 0; i < stackCount; i++ {
 		name := "stack" + strconv.Itoa(i)
-		stacks = append(stacks, cfn.Stack{StackName:name, TemplateFile: name + ".yml"  })
+		stacks = append(stacks, cfn.Stack{StackName: name, TemplateFile: name + ".yml"})
 	}
 
-	for i := 0; i < flowCount ; i++ {
+	for i := 0; i < flowCount; i++ {
 		key := "flow" + strconv.Itoa(i)
 		m[key] = Flow{
-			Description: key, 
-			Stacks: stacks,
+			Description: key,
+			Stacks:      stacks,
 		}
 	}
 

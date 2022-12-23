@@ -9,6 +9,7 @@ import (
 
 const composeDir string = ".cfn-compose"
 const composeTemplate string = "compose.yml"
+
 var flowCountLimit int = 50
 var stackCountLimit int = 50
 
