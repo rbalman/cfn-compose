@@ -1,19 +1,19 @@
 package compose
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"github.com/rbalman/cfn-compose/cfn"
 	"github.com/rbalman/cfn-compose/config"
 	"github.com/rbalman/cfn-compose/logger"
-	"fmt"
-	"errors"
-	"context"
 )
 
 type CfnTask struct {
 	Flow       config.Flow
 	DryRun     bool
 	DeployMode bool
-	CM cfn.CFNManager
+	CM         cfn.CFNManager
 }
 
 func (ct CfnTask) Execute(ctx context.Context) Result {
@@ -27,23 +27,23 @@ func (ct CfnTask) Execute(ctx context.Context) Result {
 	var stacks []cfn.Stack
 	if deployMode {
 		stacks = flow.Stacks
-	}else{
+	} else {
 		stacks = reverseStackOrder(flow.Stacks)
 	}
 
-	for _, stack := range stacks{
+	for _, stack := range stacks {
 		ctx := context.WithValue(ctx, "stack", stack.StackName)
 		var err error
 		if dryRun {
-			if deployMode{
+			if deployMode {
 				err = stack.ApplyDryRun(ctx, ct.CM)
-			}else{
-				err = stack.DestoryDryRun(ctx, ct.CM)
+			} else {
+				err = stack.DestroyDryRun(ctx, ct.CM)
 			}
 		} else {
-			if deployMode{
+			if deployMode {
 				err = stack.ApplyChanges(ctx, ct.CM)
-			}else{
+			} else {
 				err = stack.Destroy(ctx, ct.CM)
 			}
 		}
@@ -52,7 +52,7 @@ func (ct CfnTask) Execute(ctx context.Context) Result {
 			errStr := fmt.Sprintf("[FLOW: %s] [STACK: %s]. Error: %s\n", name, stack.StackName, err)
 			logger.Log.Infoln(errStr)
 			return Result{
-				Error:   errors.New(errStr),
+				Error:    errors.New(errStr),
 				FlowName: name,
 			}
 		}

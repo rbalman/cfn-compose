@@ -2,8 +2,9 @@ package config
 
 import (
 	"fmt"
-	"testing"
 	"github.com/rbalman/cfn-compose/cfn"
+	"strconv"
+	"testing"
 )
 
 func TestValidateComposeConfig(t *testing.T) {
@@ -19,14 +20,7 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When flows count is above the limit")
 	{
 		cc := ComposeConfig{
-			Flows: map[string]Flow{
-				"flow1": Flow{},
-				"flow2": Flow{},
-				"flow3": Flow{},
-				"flow4": Flow{},
-				"flow5": Flow{},
-				"flow6": Flow{},
-			},
+			Flows: generateFlowsMap(flowCountLimit+1, 1),
 		}
 
 		err := cc.Validate()
@@ -39,16 +33,16 @@ func TestValidateComposeConfig(t *testing.T) {
 	{
 		cc := ComposeConfig{
 			Flows: map[string]Flow{
-				"flow1": Flow{
+				"flow1": {
 					Order: -1,
 					Stacks: []cfn.Stack{
-						cfn.Stack{},
+						{},
 					},
 				},
-				"flow2": Flow{
+				"flow2": {
 					Order: 1,
 					Stacks: []cfn.Stack{
-						cfn.Stack{},
+						{},
 					},
 				},
 			},
@@ -64,16 +58,16 @@ func TestValidateComposeConfig(t *testing.T) {
 	{
 		cc := ComposeConfig{
 			Flows: map[string]Flow{
-				"flow1": Flow{
+				"flow1": {
 					Order: 101,
 					Stacks: []cfn.Stack{
-						cfn.Stack{},
+						{},
 					},
 				},
-				"flow2": Flow{
+				"flow2": {
 					Order: 1,
 					Stacks: []cfn.Stack{
-						cfn.Stack{},
+						{},
 					},
 				},
 			},
@@ -89,14 +83,14 @@ func TestValidateComposeConfig(t *testing.T) {
 	{
 		cc := ComposeConfig{
 			Flows: map[string]Flow{
-				"flow1": Flow{
+				"flow1": {
 					Stacks: []cfn.Stack{
-						cfn.Stack{},
-						cfn.Stack{},
+						{},
+						{},
 					},
 				},
-				"flow2": Flow{},
-				"flow6": Flow{},
+				"flow2": {},
+				"flow6": {},
 			},
 		}
 
@@ -109,50 +103,7 @@ func TestValidateComposeConfig(t *testing.T) {
 	t.Log("When one or more flow has stacks above the limit")
 	{
 		cc := ComposeConfig{
-			Flows: map[string]Flow{
-				"flow1": Flow{
-					Stacks: []cfn.Stack{
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-						cfn.Stack{},
-					},
-				},
-				"flow2": Flow{},
-				"flow3": Flow{},
-			},
+			Flows: generateFlowsMap(1, stackCountLimit+1),
 		}
 
 		err := cc.Validate()
@@ -165,14 +116,14 @@ func TestValidateComposeConfig(t *testing.T) {
 	{
 		cc := ComposeConfig{
 			Flows: map[string]Flow{
-				"flow1": Flow{
+				"flow1": {
 					Stacks: []cfn.Stack{
-						cfn.Stack{},
+						{},
 					},
 				},
-				"flow2": Flow{
+				"flow2": {
 					Stacks: []cfn.Stack{
-						cfn.Stack{},
+						{},
 					},
 				},
 			},
@@ -188,9 +139,9 @@ func TestValidateComposeConfig(t *testing.T) {
 	{
 		cc := ComposeConfig{
 			Flows: map[string]Flow{
-				"flow1": Flow{
+				"flow1": {
 					Stacks: []cfn.Stack{
-						cfn.Stack{
+						{
 							StackName: "s1-stack",
 						},
 					},
@@ -209,9 +160,9 @@ func TestValidateComposeConfig(t *testing.T) {
 	{
 		cc := ComposeConfig{
 			Flows: map[string]Flow{
-				"flow1": Flow{
+				"flow1": {
 					Stacks: []cfn.Stack{
-						cfn.Stack{
+						{
 							StackName:    "s1-stack",
 							TemplateFile: "/Users/mockuser/cfn-templates/template.yaml",
 							TemplateURL:  "https://artifactory.amazonaws.com/cfn-templates/template.yaml",
@@ -231,9 +182,9 @@ func TestValidateComposeConfig(t *testing.T) {
 	{
 		cc := ComposeConfig{
 			Flows: map[string]Flow{
-				"flow1": Flow{
+				"flow1": {
 					Stacks: []cfn.Stack{
-						cfn.Stack{
+						{
 							StackName:   "s1-stack",
 							TemplateURL: "https://artifactory.amazonaws.com/cfn-templates/template.yaml",
 						},
@@ -252,9 +203,9 @@ func TestValidateComposeConfig(t *testing.T) {
 	{
 		cc := ComposeConfig{
 			Flows: map[string]Flow{
-				"flow1": Flow{
+				"flow1": {
 					Stacks: []cfn.Stack{
-						cfn.Stack{
+						{
 							StackName:    "s1-stack",
 							TemplateFile: "/Users/mockuser/cfn-templates/template.yaml",
 						},
@@ -268,4 +219,24 @@ func TestValidateComposeConfig(t *testing.T) {
 			t.Fatal(fmt.Sprintf("Validation should return nil but found error: %s", err))
 		}
 	}
+}
+
+func generateFlowsMap(flowCount, stackCount int) map[string]Flow {
+	m := make(map[string]Flow)
+	var stacks []cfn.Stack
+
+	for i := 0; i < stackCount; i++ {
+		name := "stack" + strconv.Itoa(i)
+		stacks = append(stacks, cfn.Stack{StackName: name, TemplateFile: name + ".yml"})
+	}
+
+	for i := 0; i < flowCount; i++ {
+		key := "flow" + strconv.Itoa(i)
+		m[key] = Flow{
+			Description: key,
+			Stacks:      stacks,
+		}
+	}
+
+	return m
 }

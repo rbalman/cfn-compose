@@ -1,12 +1,12 @@
 package compose
 
 import (
-	"github.com/rbalman/cfn-compose/cfn"
-	"github.com/rbalman/cfn-compose/logger"
-	"github.com/rbalman/cfn-compose/libs"
-	"github.com/rbalman/cfn-compose/config"
 	"context"
 	"fmt"
+	"github.com/rbalman/cfn-compose/cfn"
+	"github.com/rbalman/cfn-compose/config"
+	"github.com/rbalman/cfn-compose/libs"
+	"github.com/rbalman/cfn-compose/logger"
 	"os"
 	"sort"
 	"time"
@@ -20,18 +20,18 @@ type Task interface {
 
 type Result struct {
 	FlowName string
-	Error   error
+	Error    error
 }
 
 type Composer struct {
-	LogLevel string
+	LogLevel         string
 	CherryPickedFlow string
-	DeployMode bool
-	DryRun bool
-	ConfigFile string
+	DeployMode       bool
+	DryRun           bool
+	ConfigFile       string
 }
 
-func (c *Composer)Apply() {
+func (c *Composer) Apply() {
 	ctx := context.Background()
 	ctx, cancelCtx := context.WithCancel(ctx)
 	defer cancelCtx()
@@ -57,14 +57,14 @@ func (c *Composer)Apply() {
 			fmt.Printf("Err: Cannot find the selected flow: %s in the config\n", c.CherryPickedFlow)
 			os.Exit(1)
 		}
-	}else{
+	} else {
 		flowsMap = SortFlows(cc.Flows)
 	}
-	
+
 	orders := keys(flowsMap)
 	if c.DeployMode {
 		sort.Ints(orders)
-	}else{
+	} else {
 		sort.Sort(sort.Reverse(sort.IntSlice(orders)))
 	}
 
@@ -78,10 +78,10 @@ func (c *Composer)Apply() {
 	}
 
 	sess, err := libs.GetAWSSession()
-			if err != nil {
-				logger.Log.Errorf("Failed while creating AWS Session: %s\n", err.Error())
-				os.Exit(1)
-			}
+	if err != nil {
+		logger.Log.Errorf("Failed while creating AWS Session: %s\n", err.Error())
+		os.Exit(1)
+	}
 	cm := cfn.CFNManager{Session: sess}
 
 	cfnTask := make(chan Task)
@@ -91,7 +91,6 @@ func (c *Composer)Apply() {
 		go executeFlow(ctx, cfnTask, resultsChan, i)
 	}
 	logger.Log.Debugf("TOTAL FLOW COUNT: %d\n", len(cc.Flows))
-	
 	//Dispatch Flows based on the Order
 	for _, order := range orders {
 		flows, ok := flowsMap[order]
@@ -123,7 +122,7 @@ func (c *Composer)Apply() {
 	logger.Log.Infoln("Successfully Completed!!")
 }
 
-func SortFlows(flows map[string]config.Flow) (map[int][]config.Flow) {
+func SortFlows(flows map[string]config.Flow) map[int][]config.Flow {
 	sortedFlows := make(map[int][]config.Flow)
 	for name, flow := range flows {
 		flow.Name = name
@@ -140,7 +139,7 @@ func SortFlows(flows map[string]config.Flow) (map[int][]config.Flow) {
 	return sortedFlows
 }
 
-func VisualizeFlowsMap(flowsMap map[int][]config.Flow) () {
+func VisualizeFlowsMap(flowsMap map[int][]config.Flow) {
 	orders := keys(flowsMap)
 	sort.Ints(orders)
 
@@ -164,7 +163,7 @@ func keys(flowMap map[int][]config.Flow) []int {
 	return keys
 }
 
-func cherryPickFlow(flowName string, flows map[string]config.Flow) (map[int][]config.Flow) {
+func cherryPickFlow(flowName string, flows map[string]config.Flow) map[int][]config.Flow {
 	cherryPickedFlow := make(map[int][]config.Flow)
 	for name, flow := range flows {
 		if name == flowName {
@@ -180,7 +179,7 @@ func reverseStackOrder(stacks []cfn.Stack) []cfn.Stack {
 	if len(stacks) == 0 {
 		return rs
 	}
-	for i := len(stacks) - 1 ; i >= 0; i-- {
+	for i := len(stacks) - 1; i >= 0; i-- {
 		rs = append(rs, stacks[i])
 	}
 	return rs

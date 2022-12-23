@@ -3,26 +3,27 @@ package config
 import (
 	"fmt"
 	"github.com/rbalman/cfn-compose/cfn"
-	"path/filepath"
 	"os"
+	"path/filepath"
 )
 
 const composeDir string = ".cfn-compose"
 const composeTemplate string = "compose.yml"
+
 var flowCountLimit int = 50
 var stackCountLimit int = 50
 
 type ComposeConfig struct {
 	Description string            `yaml:"Description"`
-	Flows        map[string]Flow    `yaml:"Flows"`
+	Flows       map[string]Flow   `yaml:"Flows"`
 	Vars        map[string]string `yaml:"Vars"`
 }
 
 type Flow struct {
-	Name        string  `yaml:"Name,omitempty"`
-	Description string  `yaml:"Description,omitempty"`
+	Name        string      `yaml:"Name,omitempty"`
+	Description string      `yaml:"Description,omitempty"`
 	Stacks      []cfn.Stack `yaml:"Stacks"`
-	Order       int     `yaml:"Order"`
+	Order       int         `yaml:"Order"`
 }
 
 /*
@@ -32,7 +33,7 @@ Flow is valid when all of the below conditions are true:
 - When all stacks are valid
 */
 func (j *Flow) Validate(name string) error {
-	if len(j.Stacks) >= stackCountLimit || len(j.Stacks) == 0 {
+	if len(j.Stacks) > stackCountLimit || len(j.Stacks) == 0 {
 		return fmt.Errorf("Stack count is %d for Flow: %s, should be '> 0 and <= %d'", len(j.Stacks), name, stackCountLimit)
 	}
 

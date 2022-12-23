@@ -28,7 +28,7 @@ func parse(file string) (ComposeConfig, error) {
 	if err != nil {
 		return cc, err
 	}
-	
+
 	t, err := template.New("ComposeConfigTemplate").Parse(string(data))
 	if err != nil {
 		return cc, err
@@ -65,7 +65,7 @@ func extractVars(data []byte) (map[string]string, error) {
 	if err != nil {
 		return vars.Vmap, err
 	}
-	
+
 	err = overrideWithEnvs(vars.Vmap)
 	return vars.Vmap, err
 }

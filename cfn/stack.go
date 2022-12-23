@@ -1,11 +1,11 @@
 package cfn
 
 import (
-	"github.com/rbalman/cfn-compose/logger"
-	"github.com/rbalman/cfn-compose/libs"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/rbalman/cfn-compose/libs"
+	"github.com/rbalman/cfn-compose/logger"
 	"net/url"
 	"strconv"
 	"strings"
@@ -18,16 +18,17 @@ import (
 const Regions string = "eu-north-1, ap-south-1, eu-west-3, eu-west-2, eu-west-1, ap-northeast-3,  ap-northeast-2, ap-northeast-1, sa-east-1, ca-central-1, ap-southeast-1, ap-southeast-2, eu-central-1, us-east-1, us-east-2, us-west-1, us-west-2"
 
 type Stack struct {
-	TemplateFile     string            `yaml:"template_file,omitempty"`
-	TemplateURL      string            `yaml:"template_url,omitempty"`
-	StackName        string            `yaml:"stack_name"`
-	Capabilities     []string          `yaml:"capabilities,omitempty"`
-	Parameters       map[string]string `yaml:"parameters,omitempty"`
+	TemplateFile string            `yaml:"template_file,omitempty"`
+	TemplateURL  string            `yaml:"template_url,omitempty"`
+	StackName    string            `yaml:"stack_name"`
+	Capabilities []string          `yaml:"capabilities,omitempty"`
+	Parameters   map[string]string `yaml:"parameters,omitempty"`
 	// ParametersFile   string            `yaml:"parameters_file"`
 	Tags             map[string]string `yaml:"tags,omitempty"`
 	TimeoutInMinutes int64             `yaml:"timeout,omitempty"`
-	cm CFNManager
+	cm               CFNManager
 }
+
 /*
 Stack is valid only when it satisfies all the below mentioned conditions:
 - stack_name can't be empty
@@ -52,7 +53,7 @@ func (s *Stack) Validate(index int) error {
 ///TODO Make Create Input Methods DRY
 func (s *Stack) createStackInput() (cloudformation.CreateStackInput, error) {
 	var capabilities []*string
-	for i, _ := range s.Capabilities {
+	for i := range s.Capabilities {
 		capabilities = append(capabilities, &s.Capabilities[i])
 	}
 
@@ -101,7 +102,7 @@ func (s *Stack) createStackInput() (cloudformation.CreateStackInput, error) {
 ///TODO Make Update Input Methods DRY
 func (s *Stack) updateStackInput() (cloudformation.UpdateStackInput, error) {
 	var capabilities []*string
-	for i, _ := range s.Capabilities {
+	for i := range s.Capabilities {
 		capabilities = append(capabilities, &s.Capabilities[i])
 	}
 
@@ -156,7 +157,7 @@ func (s *Stack) deleteStackInput() (cloudformation.DeleteStackInput, error) {
 ///TODO Make Create Changeset Input Method DRY
 func (s *Stack) createChangeSetInput(ctx context.Context) (cloudformation.CreateChangeSetInput, error) {
 	var capabilities []*string
-	for i, _ := range s.Capabilities {
+	for i := range s.Capabilities {
 		capabilities = append(capabilities, &s.Capabilities[i])
 	}
 
@@ -284,7 +285,7 @@ func (s *Stack) Destroy(ctx context.Context, cm CFNManager) error {
 		logger.Log.InfoCtxf(ctx, "Skipping delete... as the stack is in %s state.\n", status)
 		return nil
 
-	case "CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE",  "UPDATE_ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_FAILED", "ROLLBACK_FAILED", "DELETE_FAILED":
+	case "CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_FAILED", "ROLLBACK_FAILED", "DELETE_FAILED":
 		logger.Log.InfoCtxf(ctx, "Deleting Stack... as the stack is in %s state.\n", status)
 		i, err := s.deleteStackInput()
 		if err != nil {
@@ -301,7 +302,6 @@ func (s *Stack) Destroy(ctx context.Context, cm CFNManager) error {
 
 	return nil
 }
-
 
 func (s *Stack) ApplyDryRun(ctx context.Context, cm CFNManager) error {
 	status, err := s.status(ctx, cm)
@@ -340,7 +340,7 @@ func (s *Stack) ApplyDryRun(ctx context.Context, cm CFNManager) error {
 	return nil
 }
 
-func (s *Stack) DestoryDryRun(ctx context.Context, cm CFNManager) error {
+func (s *Stack) DestroyDryRun(ctx context.Context, cm CFNManager) error {
 	status, err := s.status(ctx, cm)
 	if err != nil {
 		return err
@@ -350,7 +350,7 @@ func (s *Stack) DestoryDryRun(ctx context.Context, cm CFNManager) error {
 	case "DELETE_COMPLETE", "DOESN'T EXIST":
 		logger.Log.InfoCtxf(ctx, "Stack Status: '%s'. Delete will be Skipped.\n", status)
 
-	case "CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE",  "UPDATE_ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_FAILED", "ROLLBACK_FAILED", "DELETE_FAILED":
+	case "CREATE_COMPLETE", "UPDATE_COMPLETE", "ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_FAILED", "ROLLBACK_FAILED", "DELETE_FAILED":
 		// logger.ColorPrintf(ctx,"[DEBUG] Creating Changeset... for the stack: %s is at %s state\n", status, s.StackName)
 		logger.Log.InfoCtxf(ctx, "Stack Status: '%s'. Stack will be deleted.\n", status)
 	default:

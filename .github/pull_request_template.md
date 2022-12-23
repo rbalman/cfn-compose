@@ -6,6 +6,7 @@
 ##### ISSUE TYPE
 <!--- Pick one below and delete the rest -->
 - Bugfix Pull Request
+- Cleanups & Refactoring
 - Docs Pull Request
 - Feature Pull Request
 - Test Pull Request
