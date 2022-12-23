@@ -91,7 +91,6 @@ func (c *Composer) Apply() {
 		go executeFlow(ctx, cfnTask, resultsChan, i)
 	}
 	logger.Log.Debugf("TOTAL FLOW COUNT: %d\n", len(cc.Flows))
-
 	//Dispatch Flows based on the Order
 	for _, order := range orders {
 		flows, ok := flowsMap[order]
