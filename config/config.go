@@ -3,26 +3,27 @@ package config
 import (
 	"fmt"
 	"github.com/rbalman/cfn-compose/cfn"
-	"path/filepath"
 	"os"
+	"path/filepath"
 )
 
 const composeDir string = ".cfn-compose"
 const composeTemplate string = "compose.yml"
+
 var flowCountLimit int = 50
 var stackCountLimit int = 50
 
 type ComposeConfig struct {
 	Description string            `yaml:"Description"`
-	Flows        map[string]Flow    `yaml:"Flows"`
+	Flows       map[string]Flow   `yaml:"Flows"`
 	Vars        map[string]string `yaml:"Vars"`
 }
 
 type Flow struct {
-	Name        string  `yaml:"Name,omitempty"`
-	Description string  `yaml:"Description,omitempty"`
+	Name        string      `yaml:"Name,omitempty"`
+	Description string      `yaml:"Description,omitempty"`
 	Stacks      []cfn.Stack `yaml:"Stacks"`
-	Order       int     `yaml:"Order"`
+	Order       int         `yaml:"Order"`
 }
 
 /*

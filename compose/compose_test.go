@@ -1,9 +1,9 @@
 package compose
 
 import (
-	"testing"
-	"github.com/rbalman/cfn-compose/cfn"
 	"fmt"
+	"github.com/rbalman/cfn-compose/cfn"
+	"testing"
 )
 
 func TestValidateComposeConfig(t *testing.T) {
@@ -18,14 +18,14 @@ func TestValidateComposeConfig(t *testing.T) {
 
 	t.Log("When there are items")
 	{
-		stacks := []cfn.Stack{cfn.Stack{StackName: "first"},cfn.Stack{StackName: "second"}, cfn.Stack{StackName: "third"}}
+		stacks := []cfn.Stack{{StackName: "first"}, {StackName: "second"}, {StackName: "third"}}
 		rs := reverseStackOrder(stacks)
 		j := 0
-		for i := len(stacks) - 1; i >= 0 ; i-- {
+		for i := len(stacks) - 1; i >= 0; i-- {
 			sName := stacks[i].StackName
 			rsName := rs[j].StackName
-			if  sName != rsName {
-				t.Fatal(fmt.Sprintf("Expected stacks[%d] and rs[%d] to be equal but got %s and %s", i, j, sName, rsName ))
+			if sName != rsName {
+				t.Fatal(fmt.Sprintf("Expected stacks[%d] and rs[%d] to be equal but got %s and %s", i, j, sName, rsName))
 			}
 			j++
 		}

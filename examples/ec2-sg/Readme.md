@@ -106,5 +106,5 @@ Resources:
 ## Deploy
 `cfn-compose deploy`
 
-## Destory
-`cfn-compose deploy`
+## Destroy
+`cfn-compose destroy`

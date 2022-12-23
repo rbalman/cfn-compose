@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
+	"context"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/rbalman/cfn-compose/logger"
-	"context"
 	"time"
 )
 
