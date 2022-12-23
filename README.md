@@ -1,7 +1,7 @@
 # cfn-compose
 A command-line tool for managing CloudFormation Stacks at scale.
 
-By Balman Rawat while working at [CloudFactory](https://www.cloudfactory.com/)
+By Balman Rawat, started as an experiment project at [CloudFactory](https://www.cloudfactory.com/)
 
 ## Features
 * Create/Update/Delete multiple CloudFormation stacks parallely or sequentially
@@ -61,7 +61,7 @@ cfn-compose config validate
 cfn-compose config visualize
 ```
 
-## Parameters
+## Man
 | Command | Options | Description |
 | ------------- | ------------- | ------------- |
 | cfn-compose | -h, --help, help | Get description of cfn-compose |
