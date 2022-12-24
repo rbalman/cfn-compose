@@ -1,6 +1,6 @@
 .vscode
 .cfn-compose
 main
-cfn-compose
+cfnc
 coverage
 .DS_Store

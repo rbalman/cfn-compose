@@ -21,7 +21,7 @@ jobs:
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           project_path: "."
-          binary_name: "cfn-compose"
+          binary_name: "cfnc"
           ldflags: "-s -w"
           extra_files: LICENSE README.md
 
@@ -41,6 +41,6 @@ jobs:
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
           project_path: "."
-          binary_name: "cfn-compose"
+          binary_name: "cfnc"
           ldflags: "-s -w"
           extra_files: LICENSE README.md
