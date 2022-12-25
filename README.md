@@ -164,11 +164,11 @@ Flows:
 * Single Compose Configuration can only have up to 50 flows and each flow can contain only upto 50 stacks
 
 ## Installation
-Binary is available for Linux, Windows and Mac OS (amd64 and arm64). Download the binary for your respective platform from the [releases page](https://github.com/rbalman/cfnc/releases).
+Binary is available for Linux, Windows and Mac OS (amd64 and arm64). Download the binary for your respective platform from the [releases page](https://github.com/rbalman/cfn-compose/releases).
 
 Linux:
 ```
-curl -sSLO https://github.com/rbalman/cfnc/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-linux-amd64.tar.gz
+curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-linux-amd64.tar.gz
 ```
 ```
 tar zxf cfnc-v0.0.1-beta-linux-amd64.tar.gz
@@ -179,7 +179,7 @@ sudo install -m 0755 cfnc /usr/local/bin/cfnc
 
 macOS (Intel):
 ```
-curl -sSLO https://github.com/rbalman/cfnc/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-darwin-amd64.tar.gz
+curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-darwin-amd64.tar.gz
 ```
 ```
 tar zxf cfnc-v0.0.1-beta-darwin-amd64.tar.gz
@@ -190,7 +190,7 @@ sudo install -m 0755 cfnc /usr/local/bin/cfnc
 
 macOS (Apple Silicon):
 ```
-curl -sSLO https://github.com/rbalman/cfnc/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-darwin-arm64.tar.gz
+curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-darwin-arm64.tar.gz
 ```
 ```
 tar zxf cfnc-v0.0.1-beta-darwin-arm64.tar.gz
@@ -201,7 +201,7 @@ sudo install -m 0755 cfnc /usr/local/bin/cfnc
 
 Windows:
 ```
-curl -sSLO https://github.com/rbalman/cfnc/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-windows-amd64.zip
+curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-windows-amd64.zip
 ```
 ```
 unzip cfnc-v0.0.1-beta-windows-amd64.zip
