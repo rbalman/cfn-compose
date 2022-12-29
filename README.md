@@ -168,10 +168,10 @@ Binary is available for Linux, Windows and Mac OS (amd64 and arm64). Download th
 
 Linux:
 ```
-curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-linux-amd64.tar.gz
+curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.2-beta-linux-amd64.tar.gz
 ```
 ```
-tar zxf cfnc-v0.0.1-beta-linux-amd64.tar.gz
+tar zxf cfnc-v0.0.2-beta-linux-amd64.tar.gz
 ```
 ```
 sudo install -m 0755 cfnc /usr/local/bin/cfnc
@@ -179,10 +179,10 @@ sudo install -m 0755 cfnc /usr/local/bin/cfnc
 
 macOS (Intel):
 ```
-curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-darwin-amd64.tar.gz
+curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.2-beta-darwin-amd64.tar.gz
 ```
 ```
-tar zxf cfnc-v0.0.1-beta-darwin-amd64.tar.gz
+tar zxf cfnc-v0.0.2-beta-darwin-amd64.tar.gz
 ```
 ```
 sudo install -m 0755 cfnc /usr/local/bin/cfnc
@@ -190,10 +190,10 @@ sudo install -m 0755 cfnc /usr/local/bin/cfnc
 
 macOS (Apple Silicon):
 ```
-curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-darwin-arm64.tar.gz
+curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.2-beta-darwin-arm64.tar.gz
 ```
 ```
-tar zxf cfnc-v0.0.1-beta-darwin-arm64.tar.gz
+tar zxf cfnc-v0.0.2-beta-darwin-arm64.tar.gz
 ```
 ```
 sudo install -m 0755 cfnc /usr/local/bin/cfnc
@@ -201,10 +201,10 @@ sudo install -m 0755 cfnc /usr/local/bin/cfnc
 
 Windows:
 ```
-curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.1-beta-windows-amd64.zip
+curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.1-beta/cfnc-v0.0.2-beta-windows-amd64.zip
 ```
 ```
-unzip cfnc-v0.0.1-beta-windows-amd64.zip
+unzip cfnc-v0.0.2-beta-windows-amd64.zip
 ```
 
 ## Contribution
