@@ -1,8 +1,8 @@
 local-bin: build
-	cp ./cfn-compose ${GOPATH}/bin
+	cp ./cfnc ${GOPATH}/bin
 
 build:
-	go build -o cfn-compose .
+	go build -o cfnc .
 
 test:
 	mkdir -p coverage

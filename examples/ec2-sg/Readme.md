@@ -8,7 +8,7 @@ Compose File
 ```yaml
 Description: Sample CloudFormation Compose file
 Vars:
-  ENV_NAME: cfn-compose
+  ENV_NAME: cfnc
   ENV_TYPE: nonproduction
   SUBNET_ID: "subnet-033274e18559e7bde"
   VPC_ID: "vpc-0001e3b703212c9cb"
@@ -86,9 +86,9 @@ Parameters:
     Type: String
     Default: t2.nano
 Resources:
-  ExampleEC2Instance: 
+  ExampleEC2Instance:
     Type: AWS::EC2::Instance
-    Properties: 
+    Properties:
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
       SubnetId: !Ref SubnetId
@@ -101,10 +101,10 @@ Resources:
           Value: !Ref EnvironmentType
 ```
 ## Visualize
-`cfn-compose config visualize`
+`cfnc config visualize`
 
 ## Deploy
-`cfn-compose deploy`
+`cfnc deploy`
 
 ## Destroy
-`cfn-compose destroy`
+`cfnc destroy`
