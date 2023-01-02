@@ -34,7 +34,7 @@ Available Commands:
   help        Help about any command
 
 Flags:
-  -c, --config string     File path to compose file (default "cfnc.yml")
+  -c, --config string     File path to compose file (default "cfn-compose.yml")
   -d, --dry-run           Run commands in dry run mode
   -h, --help              help for cfnc
   -l, --loglevel string   Specify Log Levels. Valid Levels are: DEBUG, INFO, WARN, ERROR (default "INFO")
@@ -67,7 +67,7 @@ cfnc config visualize
 | cfnc | -h, --help, help | Get description of cfnc |
 | cfnc | -d, --dry-run | enable dry run mode |
 | cfnc| -l, --loglevel |  Specify Log Levels. Valid Levels are: DEBUG, INFO, WARN, ERROR (default "INFO") |
-| cfnc| -c, --config | File path to compose file (default "cfnc.yml") |
+| cfnc| -c, --config | File path to compose file (default "cfn-compose.yml") |
 | cfnc deploy | with no flag| deploys all the stacks |
 | cfnc deploy | -f, --flow | Cherry pick specific flow to deploy |
 | cfnc destroy | with no flag| destroys all the stacks |
