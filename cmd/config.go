@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+
 	"github.com/rbalman/cfn-compose/cfn"
 	"github.com/rbalman/cfn-compose/compose"
 	"github.com/rbalman/cfn-compose/config"
@@ -18,7 +19,7 @@ var configCmd = &cobra.Command{
 }
 
 var validateCmd = &cobra.Command{
-	Use:     "validate",
+	Use:     "check",
 	Short:   "Validates the compose configuration",
 	Aliases: []string{"vd"},
 	Long:    `Static validation of the compose configuration. helps to debug configuration issues`,
@@ -39,7 +40,7 @@ var validateCmd = &cobra.Command{
 }
 
 var visualizeCmd = &cobra.Command{
-	Use:     "visualize",
+	Use:     "viz",
 	Short:   "Visualize the stacks dependencies and creation order",
 	Aliases: []string{"vz"},
 	Long:    `Visualize the stacks dependencies and creation order specified in the compose file`,
@@ -62,7 +63,7 @@ var visualizeCmd = &cobra.Command{
 }
 
 var generateCmd = &cobra.Command{
-	Use:     "generate",
+	Use:     "gen",
 	Short:   "Generates compose template",
 	Aliases: []string{"gen"},
 	Long:    `Generates the sample bootstrap compose template`,
