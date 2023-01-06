@@ -209,7 +209,3 @@ unzip cfnc-v0.0.3-beta-windows-amd64.zip
 
 ## Contribution
 There is a lot of room for enhancements and you are more than welcome to contribute. If any concerns or recommendations [create issues](https://github.com/rbalman/cfnc/issues). If want to contribute [create PR](https://github.com/rbalman/cfnc/pulls)
-
-## Contributors
-- [Balman Rawat](https://github.com/rbalman)
-- [Yadav Lamichhane](https://github.com/omegazyadav)
