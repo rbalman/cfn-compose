@@ -19,7 +19,7 @@ var configCmd = &cobra.Command{
 }
 
 var validateCmd = &cobra.Command{
-	Use:     "check",
+	Use:     "val",
 	Short:   "Validates the compose configuration",
 	Aliases: []string{"vd"},
 	Long:    `Static validation of the compose configuration. helps to debug configuration issues`,
