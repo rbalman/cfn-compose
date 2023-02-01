@@ -1,0 +1,42 @@
+Description: Demo CloudFormation Compose file
+Vars:
+  ENV_NAME: demo
+  ENV_TYPE: nonproduction
+  AWS_PROFILE: demo
+Flows:
+  DemoSQS:
+    Description: Creates Demo SQS Queue
+    Stacks:
+    - template_file: sqs.yml
+      stack_name: demo-{{ .ENV_NAME }}-sqs-queue
+      parameters:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+      tags:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+    Order: 0
+  DemoRDSInstance:
+    Description: Demo RDS Instance
+    Stacks:
+    - template_file: rds.yml
+      stack_name: demo-{{ .ENV_NAME }}-rds-instance
+      parameters:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+      tags:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+    Order: 0
+  DemoEc2Instance:
+    Description: Deploy Demo EC2 Instance
+    Stacks:
+    - template_file: ec2.yml
+      stack_name: demo-{{ .ENV_NAME }}-ec2-instance
+      parameters:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+      tags:
+        EnvironmentName: '{{ .ENV_NAME }}'
+        EnvironmentType: '{{ .ENV_TYPE }}'
+    Order: 1
