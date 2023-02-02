@@ -191,5 +191,5 @@ Please consult examples for quick start [ec2-sg example](examples/ec2-sqs/Readme
   <img src="https://contrib.rocks/image?repo=rbalman/cfn-compose" />
 </a>
 
-There is a lot of room for enhancements and you are more than welcome to contribute. If you have any concerns, recommendations, ideas feel free to [create issues](https://github.com/rbalman/cfnc/issues) or [create PR](https://github.com/rbalman/cfnc/pulls).
+There exists ample opportunity for enhancement and you are welcome to make a valuable contribution. If you have any concerns, recommendations, ideas feel free to [create issues](https://github.com/rbalman/cfnc/issues) or [create PR](https://github.com/rbalman/cfnc/pulls).
 [Details Example](examples/ec2-sqs/Readme.md)
