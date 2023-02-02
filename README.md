@@ -208,4 +208,10 @@ unzip cfnc-v0.0.3-beta-windows-amd64.zip
 ```
 
 ## Contribution
+<a href="https://github.com/rbalman/cfn-compose/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=rbalman/cfn-compose" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
+
 There is a lot of room for enhancements and you are more than welcome to contribute. If any concerns or recommendations [create issues](https://github.com/rbalman/cfnc/issues). If want to contribute [create PR](https://github.com/rbalman/cfnc/pulls)
