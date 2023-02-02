@@ -11,7 +11,7 @@ By Balman Rawat, started as an experiment project at [CloudFactory](https://www.
 * Generate/Validate/visualize configuration with ease
 * Supports Go Templating for dynamic value substitution
 
-![Demo](./docs/images/demo.gif)
+https://user-images.githubusercontent.com/8892649/216241617-9aef4f3c-2981-4b36-a4da-41eec0e6b1e7.mp4/
 
 ## Overview
 As the infrastrucutre evolves and gets complicated we need to manage/maintain multiple CloudFormation Stacks. When we want to `create/update/delete` these stacks we need to manually apply the actions one at a time. Deletion mostly in dev/test environment can be hectic as we should delete the stacks in the reverse of creation order. **cfnc** helps to manage multiple stacks that are closely related using declarative language.
