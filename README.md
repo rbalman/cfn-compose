@@ -167,7 +167,7 @@ Flows:
         EnvironmentType: '{{ .ENV_TYPE }}'
 ```
 
-[Details Example](examples/ec2-sqs/Readme.md)
+Please consult examples for quick start [ec2-sg example](examples/ec2-sqs/Readme.md) and [demo ec2-sqs-rds example](examples/demo/Readme.md)
 
 ## Contribution
 <a href="https://github.com/rbalman/cfn-compose/graphs/contributors">
