@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Demo RDS Template
+
+Parameters:
+  EnvironmentType:
+    Type: String
+  EnvironmentName:
+    Type: String
+
+Conditions:
+  IsDemo: !Equals ["demo", "alwaysfalse"]
+
+Resources:
+  MyInstance:
+    Condition: IsDemo
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      MasterUsername: "masteruser"
+      MasterUserPassword: "topdemosecret"
+      DBInstanceClass: "db.t3.micro"
+      Engine: "postgres"
+      AllocatedStorage: 30
+      AutoMinorVersionUpgrade: false
+      Tags:
+        - Key: EnvironmentName
+          Value: !Ref EnvironmentName
+        - Key: EnvironmentType
+          Value: !Ref EnvironmentType

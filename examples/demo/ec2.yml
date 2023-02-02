@@ -1,0 +1,31 @@
+Description: Demo EC2 Instance Template
+Parameters:
+  EnvironmentType:
+    Type: String
+  EnvironmentName:
+    Type: String
+
+Conditions:
+  IsDemo: !Equals ["demo", "alwaysfalse"]
+
+Resources:
+  SecurityGroup:
+    Condition: IsDemo
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: test security group
+
+  ExampleEC2Instance:
+    Condition: IsDemo
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: ami-0aa7d40eeae50c9a9
+      InstanceType: t2.small
+      SubnetId: subnet-067ec966200be8f76
+      SecurityGroupIds: 
+        - !Ref SecurityGroup
+      Tags:
+        - Key: EnvironmentName
+          Value: !Ref EnvironmentName
+        - Key: EnvironmentType
+          Value: !Ref EnvironmentType

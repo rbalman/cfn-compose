@@ -18,7 +18,7 @@ A command-line tool for managing CloudFormation Stacks at scale.
 - Generate/Validate/visualize configuration with ease
 - Supports Go Template for dynamic value substitution
 
-![Demo](./docs/images/demo.gif)
+https://user-images.githubusercontent.com/8892649/216241617-9aef4f3c-2981-4b36-a4da-41eec0e6b1e7.mp4/
 
 ## Overview
 
@@ -71,6 +71,20 @@ cfnc config validate
 cfnc config visualize
 ```
 
+## Limitations
+* Supports limited CFN attributes
+* No Retry Mechanism
+* No Configurable worker pool. One Go routine is spun for every flow.
+* Single Compose Configuration can only have up to 50 flows and each flow can contain only upto 50 stacks
+
+## Installation
+Binary is available for Linux, Windows and Mac OS (amd64 and arm64). Download the binary for your respective platform from the [releases page](https://github.com/rbalman/cfn-compose/releases).
+
+Using go cli
+```shell
+go install github.com/rbalman/cfn-compose@latest
+```
+
 ## Man
 
 | Command               | Options          | Description                                                                     |
@@ -88,9 +102,8 @@ cfnc config visualize
 | cfnc config visualize | no flags         | Visualize the stacks dependencies and creation order                            |
 | cfnc                  | -v, --version    | version for cfnc                                                                |
 
-## Compose Configuration
-
-**Syntax:**
+## Documentation
+**Sample Config File:**
 
 ```yaml
 Description: Sample CloudFormation Compose file
@@ -171,71 +184,12 @@ Flows:
           EnvironmentType: '{{ .ENV_TYPE }}'
 ```
 
-[Details Example](examples/ec2-sqs/Readme.md)
-
-## Limitations
-
-- Supports limited CFN attributes
-- No Retry Mechanism
-- No Configurable worker pool. One Go routine is spun for every flow.
-- Single Compose Configuration can only have up to 50 flows and each flow can contain only up to 50 stacks
-
-## Installation
-
-Binary is available for Linux, Windows and Mac OS (amd64 and arm64). Download the binary for your respective platform from the [releases page](https://github.com/rbalman/cfn-compose/releases).
-
-Linux:
-
-```
-curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.3-beta/cfnc-v0.0.3-beta-linux-amd64.tar.gz
-```
-
-```
-tar zxf cfnc-v0.0.3-beta-linux-amd64.tar.gz
-```
-
-```
-sudo install -m 0755 cfnc /usr/local/bin/cfnc
-```
-
-macOS (Intel):
-
-```
-curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.3-beta/cfnc-v0.0.3-beta-darwin-amd64.tar.gz
-```
-
-```
-tar zxf cfnc-v0.0.3-beta-darwin-amd64.tar.gz
-```
-
-```
-sudo install -m 0755 cfnc /usr/local/bin/cfnc
-```
-
-macOS (Apple Silicon):
-
-```
-curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.3-beta/cfnc-v0.0.3-beta-darwin-arm64.tar.gz
-```
-
-```
-tar zxf cfnc-v0.0.3-beta-darwin-arm64.tar.gz
-```
-
-```
-sudo install -m 0755 cfnc /usr/local/bin/cfnc
-```
-
-Windows:
-
-```
-curl -sSLO https://github.com/rbalman/cfn-compose/releases/download/v0.0.3-beta/cfnc-v0.0.3-beta-windows-amd64.zip
-```
-
-```
-unzip cfnc-v0.0.3-beta-windows-amd64.zip
-```
+Please consult examples for quick start [ec2-sg example](examples/ec2-sqs/Readme.md) and [demo ec2-sqs-rds example](examples/demo/Readme.md)
 
 ## Contribution
+<a href="https://github.com/rbalman/cfn-compose/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=rbalman/cfn-compose" />
+</a>
 
-There is a lot of room for enhancements and you are more than welcome to contribute. If any concerns or recommendations [create issues](https://github.com/rbalman/cfnc/issues). If want to contribute [create PR](https://github.com/rbalman/cfnc/pulls)
+There exists ample opportunity for enhancement and you are welcome to make a valuable contribution. If you have any concerns, recommendations, ideas feel free to [create issues](https://github.com/rbalman/cfnc/issues) or [create PR](https://github.com/rbalman/cfnc/pulls).
+[Details Example](examples/ec2-sqs/Readme.md)

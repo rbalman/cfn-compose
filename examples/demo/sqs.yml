@@ -1,0 +1,20 @@
+Description: Demo SQS Template
+Parameters:
+  EnvironmentType:
+    Type: String
+  EnvironmentName:
+    Type: String
+Conditions:
+  IsDemo: !Equals ["demo", "alwaysfalse"]
+
+Resources:
+  DemoQueue:
+    Condition: IsDemo
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: demo-queue-fake
+      Tags: 
+        - Key: "EnvironmentName"
+          Value: !Ref EnvironmentName
+        - Key: "EnvironmentType"
+          Value: !Ref EnvironmentType
