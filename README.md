@@ -1,8 +1,6 @@
 # cfnc
 A command-line tool for managing CloudFormation Stacks at scale.
 
-By Balman Rawat, started as an experiment project at [CloudFactory](https://www.cloudfactory.com/)
-
 ## Features
 * Create/Update/Delete multiple CloudFormation stacks parallely or sequentially
 * Customize the CloudFormation stacks dependency using yaml config
