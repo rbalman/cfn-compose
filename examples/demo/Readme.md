@@ -13,12 +13,12 @@ https://user-images.githubusercontent.com/8892649/216241617-9aef4f3c-2981-4b36-a
       cfnc deploy -c cfnc.yml
     ```
 
-- Destory change in dry-run mode
+- Destroy change in dry-run mode
   ```shell
     cfnc destroy -c cfnc.yml --dry-run
   ```
 
-- Destory
+- Destroy
     ```shell
       cfnc destroy -c cfnc.yml
     ```
