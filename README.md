@@ -28,6 +28,21 @@ As infrastructure grows more complex, managing multiple CloudFormation Stacks be
 
 ![overview image](./docs/images/overview.png)
 
+## Installation
+Binary is available for Linux, Windows and Mac OS (amd64 and arm64). Download the binary for your respective platform from the [releases page](https://github.com/rbalman/cfn-compose/releases).
+
+#### Using go cli
+```shell
+go install github.com/rbalman/cfn-compose@latest
+```
+
+## Limitations
+* Supports limited CFN attributes
+* No Retry Mechanism
+* No Configurable worker pool. One Go routine is spun for every flow.
+* Single Compose Configuration can only have up to 50 flows and each flow can contain only upto 50 stacks
+
+
 ## Usage
 
 ```shell
@@ -71,20 +86,6 @@ cfnc destroy -d
 cfnc config generate
 cfnc config validate
 cfnc config visualize
-```
-
-## Limitations
-* Supports limited CFN attributes
-* No Retry Mechanism
-* No Configurable worker pool. One Go routine is spun for every flow.
-* Single Compose Configuration can only have up to 50 flows and each flow can contain only upto 50 stacks
-
-## Installation
-Binary is available for Linux, Windows and Mac OS (amd64 and arm64). Download the binary for your respective platform from the [releases page](https://github.com/rbalman/cfn-compose/releases).
-
-Using go cli
-```shell
-go install github.com/rbalman/cfn-compose@latest
 ```
 
 ## Man
