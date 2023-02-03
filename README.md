@@ -22,7 +22,7 @@ https://user-images.githubusercontent.com/8892649/216241617-9aef4f3c-2981-4b36-a
 
 ## Overview
 
-As infrastructure grows more complex, managing multiple CloudFormation Stacks becomes a challenge. Typically, actions such as creating, updating, or deleting stacks are performed on a single stack at a time. Deleting stacks in a development or testing environment can be cumbersome because we might want to destory multiple stacks and they must be deleted in the reverse order of creation. 
+As infrastructure grows more complex, managing multiple CloudFormation Stacks becomes a challenge. Typically, actions such as creating, updating, or deleting stacks are performed on a single stack at a time. In addition deleting stacks in a development or testing environment can be cumbersome because we usually want to destroy whole environment and to do that stacks must be deleted in the reverse order of creation. 
 
 `cfn-compose` offers a solution to this problem by providing a way to manage multiple, related stacks using a declarative yaml language, making the process easier and more streamlined. For more details please go through the rest of the Readme.
 
