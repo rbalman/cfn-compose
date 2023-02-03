@@ -41,7 +41,7 @@ go install github.com/rbalman/cfn-compose@latest
 * Supports limited CFN attributes
 * No Retry Mechanism
 * No Configurable concurrency. One Go routine is spun for every flow.
-* Max limit for `flows is 50` and each flow can have up to `50 stacks`. This is by design to limit all the stacks in single compose.
+* One compose file can have max `50` flows and each flow can have up to `50 stacks`. This is by design, to limit stacks in a compose file.
 
 
 ## Usage
