@@ -36,11 +36,12 @@ Binary is available for Linux, Windows and Mac OS (amd64 and arm64). Download th
 go install github.com/rbalman/cfn-compose@latest
 ```
 
+
 ## Limitations
 * Supports limited CFN attributes
 * No Retry Mechanism
-* No Configurable worker pool. One Go routine is spun for every flow.
-* Single Compose Configuration can only have up to 50 flows and each flow can contain only upto 50 stacks
+* No Configurable concurrency. One Go routine is spun for every flow.
+* Max limit for `flows is 50` and each flow can have up to `50 stacks`. This is by design to limit all the stacks in single compose.
 
 
 ## Usage
