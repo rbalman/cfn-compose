@@ -24,7 +24,7 @@ https://user-images.githubusercontent.com/8892649/216241617-9aef4f3c-2981-4b36-a
 
 As the infrastructure evolves and gets complicated we need to manage/maintain multiple CloudFormation Stacks. When we want to `create/update/delete` these stacks we need to manually apply the actions one at a time. Deletion mostly in dev/test environment can be hectic as we should delete the stacks in the reverse of creation order. **cfnc** helps to manage multiple stacks that are closely related using declarative language.
 
-![overview image](./docs/images/cfn-compose.svg)
+![overview image](./docs/images/overview.png)
 
 ## Usage
 
@@ -108,7 +108,8 @@ go install github.com/rbalman/cfn-compose@latest
 ```yaml
 Description: Sample CloudFormation Compose file
 Vars:
-  Key: Value
+  Key1: Value1
+  Key2: Value2
 Flows:
   Flow1:
     Order: 0
@@ -127,7 +128,7 @@ Flows:
 A typical compose configuration contains:
 
 - Optional `Description`
-- Optional `Vars` section to define variables in `Key: Value` mapping
+- Optional `Vars` section to define variables in `Key: Value` mapping. Only static variables are supported at the moment.
   eg:
 
 ```yaml
@@ -138,7 +139,7 @@ Vars:
 ```
 
 - Mandatory `Flows:` section
-  `Flow` is a collection of CloudFormation stacks that are deployed sequentially. `Flows` is collection of flows which can be ordered using `Order` property. `Flows` can run in parallel or sequentially based on the Order property.
+  `Flow` is a collection of CloudFormation stacks that are deployed sequentially. `Flows` is collection of flow which can be ordered using `Order` property. `Flows` can run in parallel or sequentially based on the Order property.
   - Optional `Order` can be any `unsigned` integer. Default `Order` is set to `0`. Flow with lowest orders are deployed first.
   - Optional `Description`
   - Mandatory `Stacks` which is the collection of CFN stack. Below are the supported attributes of the stack object
