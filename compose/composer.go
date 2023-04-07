@@ -223,6 +223,7 @@ func executeFlow(ctx context.Context, taskC chan Task, resultsChan chan Result, 
 	}
 }
 
+// TODO: add unit test for this
 func getMaxNumberOfWorkers(totalFlows, numberFromFlag int) int {
 	if numberFromFlag == 0 || totalFlows <= numberFromFlag {
 		return totalFlows
