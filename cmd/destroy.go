@@ -17,6 +17,7 @@ var destroyCmd = &cobra.Command{
 			DeployMode:       false,
 			DryRun:           dryRun,
 			ConfigFile:       configFile,
+			NumberOfWorkers:  numberOfWorkers,
 		}
 
 		c.PrintConfig()
