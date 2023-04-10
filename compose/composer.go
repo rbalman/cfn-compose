@@ -30,7 +30,7 @@ type Composer struct {
 	DeployMode       bool
 	DryRun           bool
 	ConfigFile       string
-	NumberOfWorkers  int
+	WorkersCount     int
 }
 
 func (c *Composer) Apply() {
@@ -88,7 +88,7 @@ func (c *Composer) Apply() {
 
 	cfnTask := make(chan Task)
 	resultsChan := make(chan Result)
-	numWorkers := getMaxNumberOfWorkers(len(cc.Flows), c.NumberOfWorkers)
+	numWorkers := getWorkersCount(len(cc.Flows), c.WorkersCount)
 	//Generate the worker pool as pre the flow counts
 	for i := 0; i < numWorkers; i++ {
 		go executeFlow(ctx, cfnTask, resultsChan, i)
@@ -136,6 +136,7 @@ func (c *Composer) PrintConfig() {
 	}
 	fmt.Printf("DryRun: %t\n", c.DryRun)
 	fmt.Printf("LogLevel: %s\n", c.LogLevel)
+	fmt.Printf("WorkersCount: %d\n", c.WorkersCount)
 	fmt.Printf("DeployMode: %t\n\n", c.DeployMode)
 }
 
@@ -223,10 +224,9 @@ func executeFlow(ctx context.Context, taskC chan Task, resultsChan chan Result, 
 	}
 }
 
-// TODO: add unit test for this
-func getMaxNumberOfWorkers(totalFlows, numberFromFlag int) int {
-	if numberFromFlag == 0 || totalFlows <= numberFromFlag {
-		return totalFlows
+func getWorkersCount(flowsCount, countFromFlag int) int {
+	if countFromFlag <= 0 || countFromFlag > flowsCount {
+		return flowsCount
 	}
-	return numberFromFlag
+	return countFromFlag
 }

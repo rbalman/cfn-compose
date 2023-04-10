@@ -17,7 +17,7 @@ var deployCmd = &cobra.Command{
 			DeployMode:       true,
 			DryRun:           dryRun,
 			ConfigFile:       configFile,
-			NumberOfWorkers:  numberOfWorkers,
+			WorkersCount:     workersCount,
 		}
 
 		c.PrintConfig()
