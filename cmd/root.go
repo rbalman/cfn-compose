@@ -10,6 +10,7 @@ var configFile string
 var logLevel string
 var dryRun bool
 var flowName string
+var workersCount int
 
 var rootCmd = &cobra.Command{
 	Use:     "cfnc",
@@ -23,8 +24,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&logLevel, "loglevel", "l", "INFO", "Specify Log Levels. Valid Levels are: DEBUG, INFO, WARN, ERROR")
 	rootCmd.PersistentFlags().BoolVarP(&dryRun, "dry-run", "d", false, "Run commands in dry run mode")
 	deployCmd.PersistentFlags().StringVarP(&flowName, "flow", "f", "", "Cherry pick flow name that you want to deploy")
+	deployCmd.PersistentFlags().IntVarP(&workersCount, "workers", "w", 0, "Number of concurrent workers that you want to spin")
 	destroyCmd.PersistentFlags().StringVarP(&flowName, "flow", "f", "", "Cherry pick flow name that you want to destroy")
-
+	destroyCmd.PersistentFlags().IntVarP(&workersCount, "workers", "w", 0, "Number of concurrent workers that you want to spin")
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(destroyCmd)
 	rootCmd.AddCommand(configCmd)

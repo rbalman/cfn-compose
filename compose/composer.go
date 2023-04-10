@@ -3,13 +3,14 @@ package compose
 import (
 	"context"
 	"fmt"
+	"os"
+	"sort"
+	"time"
+
 	"github.com/rbalman/cfn-compose/cfn"
 	"github.com/rbalman/cfn-compose/config"
 	"github.com/rbalman/cfn-compose/libs"
 	"github.com/rbalman/cfn-compose/logger"
-	"os"
-	"sort"
-	"time"
 )
 
 // var colors []string = []string{log.Blue, log.Yellow, log.Green, log.Magenta, log.Cyan}
@@ -29,6 +30,7 @@ type Composer struct {
 	DeployMode       bool
 	DryRun           bool
 	ConfigFile       string
+	WorkersCount     int
 }
 
 func (c *Composer) Apply() {
@@ -86,11 +88,13 @@ func (c *Composer) Apply() {
 
 	cfnTask := make(chan Task)
 	resultsChan := make(chan Result)
+	numWorkers := getWorkersCount(len(cc.Flows), c.WorkersCount)
 	//Generate the worker pool as pre the flow counts
-	for i := 0; i < len(cc.Flows); i++ {
+	for i := 0; i < numWorkers; i++ {
 		go executeFlow(ctx, cfnTask, resultsChan, i)
 	}
 	logger.Log.Debugf("TOTAL FLOW COUNT: %d\n", len(cc.Flows))
+	logger.Log.Debugf("TOTAL WORKERS SPUN: %d\n", numWorkers)
 	//Dispatch Flows based on the Order
 	for _, order := range orders {
 		flows, ok := flowsMap[order]
@@ -120,6 +124,20 @@ func (c *Composer) Apply() {
 	}
 
 	logger.Log.Infoln("Successfully Completed!!")
+}
+
+func (c *Composer) PrintConfig() {
+	fmt.Println("##########################")
+	fmt.Println("# Compose Configuration #")
+	fmt.Println("##########################")
+	fmt.Printf("ConfigFile: %s\n", c.ConfigFile)
+	if c.CherryPickedFlow != "" {
+		fmt.Printf("Selected Flow: %s\n", c.CherryPickedFlow)
+	}
+	fmt.Printf("DryRun: %t\n", c.DryRun)
+	fmt.Printf("LogLevel: %s\n", c.LogLevel)
+	fmt.Printf("WorkersCount: %d\n", c.WorkersCount)
+	fmt.Printf("DeployMode: %t\n\n", c.DeployMode)
 }
 
 func SortFlows(flows map[string]config.Flow) map[int][]config.Flow {
@@ -206,15 +224,9 @@ func executeFlow(ctx context.Context, taskC chan Task, resultsChan chan Result, 
 	}
 }
 
-func (c *Composer) PrintConfig() {
-	fmt.Println("##########################")
-	fmt.Println("# Compose Configuration #")
-	fmt.Println("##########################")
-	fmt.Printf("ConfigFile: %s\n", c.ConfigFile)
-	if c.CherryPickedFlow != "" {
-		fmt.Printf("Selected Flow: %s\n", c.CherryPickedFlow)
+func getWorkersCount(flowsCount, countFromFlag int) int {
+	if countFromFlag <= 0 || countFromFlag > flowsCount {
+		return flowsCount
 	}
-	fmt.Printf("DryRun: %t\n", c.DryRun)
-	fmt.Printf("LogLevel: %s\n", c.LogLevel)
-	fmt.Printf("DeployMode: %t\n\n", c.DeployMode)
+	return countFromFlag
 }
