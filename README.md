@@ -36,6 +36,11 @@ Binary is available for Linux, Windows and Mac OS (amd64 and arm64). Download th
 go install github.com/rbalman/cfn-compose@latest
 ```
 
+## Run with Docker
+```shell
+docker pull omegazyadav/cfnc
+docker run --rm --name cfnc omegazyadav/cfnc
+```
 
 ## Limitations
 * Supports limited CFN attributes
