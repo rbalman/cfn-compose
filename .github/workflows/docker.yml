@@ -1,0 +1,21 @@
+name: Push Docker Image to DockerHub
+
+on:
+  push:
+    branches: [ master, main]
+
+jobs:
+  dockerhub:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Login to DockerHub
+      env:
+        DOCKER_USER: ${{secrets.DOCKER_USER}}
+        DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+    - name: Build and Push the cfnc Image
+      run: |
+        docker build -t omegazyadav/cfnc:${{ github.sha }} .
+        docker push omegazyadav/cfnc:${{ github.sha }}
